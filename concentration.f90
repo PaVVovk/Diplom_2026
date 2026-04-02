@@ -4,11 +4,11 @@ integer, parameter :: dp = kind(1.0d0)
     integer :: M, k, step_count
     real(dp) :: r0, delta, h_first, sigma, tau 
     real(dp), allocatable :: r_k(:), r_half_k(:), h_k(:), h_half_k(:)
-    real(dp), allocatable :: n_e_i(:), n_i_i(:), E_r_i(:)
+    real(dp), allocatable :: n_e_i(:), n_i_i(:), E_r_i(:), t_out(:)
     real(dp), allocatable :: n_e_final(:), n_i_final(:), E_r_final(:)
     real(dp) :: gamma_e, l_e, gamma_i, l_i, D_e, D_i, k_e, k_i, nu_ion, beta_ei
     logical :: repeat_flag
-    real(dp) :: e, p, N, k_b, T_gas, t_max, t
+    real(dp) :: e, p, N, k_b, T_gas, t_max, t, t0
     ! Ввод параметров
     print *, 'Enter the number of intervals M:'
     read *, M
@@ -32,7 +32,7 @@ integer, parameter :: dp = kind(1.0d0)
     allocate(n_e_final(0:M))
     allocate(n_i_final(0:M))
     allocate(E_r_final(0:M))
-    
+    allocate(t_out(0:M))
     !Элементарный заря
     
     e = 1.602176634E-19_dp
@@ -115,9 +115,17 @@ integer, parameter :: dp = kind(1.0d0)
     print *, 'Min step h_k:', minval(h_k)
     if (minval(h_k) < 1e-30) then
         print *, 'ATTENTION: very small step!'
-    end if
+    end if 
     
-    tau = minval(h_k**2/(4*D_e))  
+    !Заполняем массив t_out
+    
+    t0 = 10E-6
+    do k = 0, M
+        t_out(k) = 10**(k/10)*t0
+    end do     
+    
+    tau = minval(h_k**2/(4*D_e))
+     
     do while(t < t_max)
         repeat_flag = .false.
         step_count = step_count + 1
@@ -137,6 +145,11 @@ integer, parameter :: dp = kind(1.0d0)
                                n_e_final, n_i_final, E_r_final, &
                                repeat_flag,  h_half_k, h_k)
         end do
+        m
+        if (t>t_out)) then
+            call ...
+            m = m+1
+        end if
         !print *, 'n_e_final = ', n_e_final(M/2)
         !print *, 'n_i_final = ', n_i_final(M/2)
         !print *, 'E_r_final = ', E_r_final(M/2)
@@ -160,7 +173,7 @@ integer, parameter :: dp = kind(1.0d0)
     end do
     
     deallocate(r_k, r_half_k, h_k, h_half_k, n_e_i, n_i_i, &
-               E_r_i, n_e_final, n_i_final, E_r_final)
+               E_r_i, n_e_final, n_i_final, E_r_final, t_out)
 contains 
     
     !Прогонка для электронов
@@ -307,7 +320,7 @@ contains
     real(dp) :: F(1:M), const   
     const = 2.0_dp*3.141592653589793_dp*1.602176634E-19_dp
     E_r_m1(0) = 0
-    E_r_m1(1) = const*h_k(0)*0.5_dp*((n_i_m1(1)-n_e_m1(1)) + & 
+    E_r_m1(1) = const*h_k(0)*((n_i_m1(1)-n_e_m1(1)) + & 
                  (n_i_m1(0) - n_e_m1(0)))
     F(1) = r_k(1)*E_r_m1(1)
     do k = 2, M
@@ -405,5 +418,21 @@ contains
             repeat_flag = .false.    
         end if  
     end do
-    end subroutine solve_iterations               
+    end subroutine solve_iterations  
+    subroutine show_parametrs(M, r_k, r_half_k, sigma, tau, gamma_e, l_e, gamma_i, l_i, &
+                           D_e, D_i, k_e, k_i, nu_ion, beta_ei, &
+                           n_e_i, n_i_i, E_r_i, &
+                           n_e_final, n_i_final, E_r_final, &
+                           repeat_flag, h_half_k, h_k)    
+    real(dp), intent(in):
+         potential(0) = 0
+         do k = 1, M
+             potential(k) = -(E_r_final(k-1) + E_r_final(k))*h_k(k-1)/2
+         end do
+         
+         do k = 0, M-1
+             J_e(k) = 
+             J_i(k) = 
+         end do                         
+    end subroutine show_parametrs      
 end program concentration
