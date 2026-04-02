@@ -60,24 +60,20 @@ integer, parameter :: dp = kind(1.0d0)
     t_max = 10E-4
     step_count = 0
   
-    ! Формула для геометрической прогрессии
-    if(delta == 0)
-        do k = 0, M
-            h_k(k) = r0/M
-            r_k(k) = r()
-                
-    end if 
-    h_first = (delta * r0) / ((1.0_dp + delta)**M - 1.0_dp)
-
+    
     ! Генерация основной сетки
     r_k(0) = 0.0_dp
+    if(delta == 0) then 
+        h_first = r0/M       
+    else    
+        h_first = (delta * r0) / ((1.0_dp + delta)**M - 1.0_dp)
+    end if 
     do k = 0, M-1
         h_k(k) = h_first * (1.0_dp + delta)**(k)
         r_k(k+1) = r_k(k) + h_k(k)
         r_half_k(k) = (r_k(k) + r_k(k+1)) / 2.0_dp
     end do
-
-    ! Генерация вспомогательной сетки (полуцелые точки)
+        
     do k = 1, M-1
         h_half_k(k) = (h_k(k-1) + h_k(k)) / 2.0_dp
     end do
