@@ -1,19 +1,19 @@
 program concentration
 implicit none
     integer, parameter :: dp = kind(1.0d0)
-    integer :: M, k, step_count
+    integer :: M, k, step_count, t_counter
     integer, parameter :: T_count = 50
     real(dp) :: r0, delta, h_first, sigma, tau
     real(dp), allocatable :: r_k(:), r_half_k(:), h_k(:), h_half_k(:)
     real(dp) :: l_e, l_i, D_e, D_i, k_e, k_i, nu_ion
-    real(dp) :: p, N, t_max, t, t0, t_counter
+    real(dp) :: p, N, t_max, t, t0 
 
-    real(dp), parameter :: k_b = 1.380649E-23_dp
+    real(dp), parameter :: k_b = 1.380649E-19_dp !в см^2
     real(dp), parameter :: e = 1.602176634E-19_dp
     real(dp), parameter :: gamma_e = 0.7104_dp
     real(dp), parameter :: gamma_i = 0.7104_dp
     real(dp), parameter :: T_gas = 300_dp
-    real(dp), parameter :: beta_ei = 10E-12
+    real(dp), parameter :: beta_ei = 1E-12
 
     real(dp), allocatable :: n_e_i(:), n_i_i(:), E_r_i(:)
     real(dp), allocatable :: n_e_final(:), n_i_final(:), E_r_final(:)
@@ -31,6 +31,7 @@ implicit none
     read *, sigma
     print *, 'Enter the pressure in pascals'
     read *, p
+    !p = 1
 
     ! Выделение памяти
     allocate(r_k(0:M))
@@ -48,13 +49,13 @@ implicit none
     !Значения коэффициентов
     N = p/(k_b*T_gas)
     print *, 'N = ', N
-    nu_ion = 0.8093E-16_dp*N
-    k_e = 0.7890E+24_dp/N
+    nu_ion = 0.8093E-16_dp*N*1E6 !1/c
+    k_e = 0.7890E+24_dp/N/100 !см^2/(В*с)
     k_i = 0.286_dp + 0.669_dp*EXP(-E/(N*179.5_dp)) + 0.679_dp*EXP(-E/(N*1305_dp)) !см^2 / (В * с)
-    D_e = 0.6932E+25_dp/N
-    D_i = k_i*T/e
-    l_e = 1/(N*10E-20_dp)
-    l_i = 1/(N*10E-20_dp)
+    D_e = 0.6932E+25_dp/N/100 !см^2/c
+    D_i = k_i*T/e !см^2/с
+    l_e = 1/(N*1E-20_dp) 
+    l_i = 1/(N*1E-20_dp)
     n_i_i = nu_ion/beta_ei
     n_e_i = n_i_i
     E_r_i = 0.0_dp
@@ -424,8 +425,8 @@ contains
     end do
     end subroutine solve_iterations
 
-    function df_dr(f1, f2, f3, x1, x2, x3, delta1, delta2)
-        real(dp) :: f1, f2, f3, x1, x2, x3, delta1, delta2, df_dr
+    function df_dr(f1, f2, f3, delta1, delta2)
+        real(dp) :: f1, f2, f3, delta1, delta2, df_dr
         df_dr = ((f2 - f1) / delta1 ** 2 + (f3 - f2) / delta2 ** 2) / (1 / delta1 + 1 / delta2)
     end function df_dr
 
@@ -435,28 +436,28 @@ contains
         real(dp) :: potential(0:M), j_e(0:M), j_i(0:M)
         character(len=10) :: time_name
 
-        write (time_name, '(F7.5)') time
+        write (time_name, '(F10.8)') time
         open(11, file = 'potential_t='//trim(time_name)//'.txt', status = 'new')
         open(12, file = 'j_e_t='//trim(time_name)//'.txt', status = 'new')
         open(13, file = 'j_i_t='//trim(time_name)//'.txt', status = 'new')
 
-        potential(M) = 0
-        do k = M, 1, -1
-            potential(k-1) = potential(k) + (E_r_final(k) + E_r_final(k-1)) * h_k(k-1) / 2.0_dp
+        potential(0) = 0
+        do k = 1, M
+            potential(k) = potential(k-1) + (E_r_final(k) + E_r_final(k-1)) * h_k(k-1) / 2.0_dp
         end do
 
         j_e(0) = 0
         j_i(0) = 0
 
         do k = 1, M-1
-            j_e(k) = - D_e * df_dr(n_e(k-1), n_e(k), n_e(k+1), r_k(k-1), r_k(k), r_k(k+1), &
+            j_e(k) = - D_e * df_dr(n_e(k-1), n_e(k), n_e(k+1), &
             h_k(k-1), h_k(k)) - k_e * n_e(k) * E_r(k)
 
-            j_i(k) = - D_i * df_dr(n_i(k-1), n_i(k), n_i(k+1), r_k(k-1), r_k(k), r_k(k+1), &
+            j_i(k) = - D_i * df_dr(n_i(k-1), n_i(k), n_i(k+1), &
             h_k(k-1), h_k(k)) + k_i * n_i(k) * E_r(k)
         end do
 
-        j_e(M) = -D_i * (n_e(M) - n_e(M-1)) / h_k(M-1) - k_e * n_e(M) * E_r(M)
+        j_e(M) = -D_e * (n_e(M) - n_e(M-1)) / h_k(M-1) - k_e * n_e(M) * E_r(M)
         j_i(M) = -D_i * (n_i(M) - n_i(M-1)) / h_k(M-1) + k_i * n_i(M) * E_r(M)
 
         do k = 0, M
