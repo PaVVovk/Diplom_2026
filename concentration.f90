@@ -44,7 +44,6 @@ implicit none
     allocate(n_e_final(0:M))
     allocate(n_i_final(0:M))
     allocate(E_r_final(0:M))
-    !Элементарный заря
 
     !Значения коэффициентов
     N = p/(k_b*T_gas)
@@ -60,7 +59,7 @@ implicit none
     n_e_i = n_i_i
     E_r_i = 0.0_dp
     t = 0
-    t_max = 10E-4
+    t_max = 1e-4
     step_count = 0
 
 
@@ -152,7 +151,7 @@ implicit none
         end do
 
         if (t > t_out(t_counter)) then
-            call show_parameters(n_e_final, n_i_final, E_r_final, t)
+            call show_parameters(n_e_final, n_i_final, E_r_final, t, r_k)
             t_counter = t_counter+1
         end if
         !print *, 'n_e_final = ', n_e_final(M/2)
@@ -220,9 +219,11 @@ contains
         F(k) = n_e_i(k)/tau + (1.0_dp - sigma) * (A(k)*n_e_i(k-1) - (C(k) - 1.0_dp/(sigma*tau))*n_e_i(k) + B(k)*n_e_i(k+1))
     end do
 
-    A(M) = gamma_e*l_e/h_k(M-1)
-    C(M) = 1.0_dp + gamma_e * l_e / h_k(M-1)
-    B(M) = 0.0_dp  ! B_M не используется
+    !A(M) = gamma_e*l_e/h_k(M-1)
+    !C(M) = 1.0_dp + gamma_e * l_e / h_k(M-1)
+    A(M) = 0.0_dp
+    C(M) = 0.0_dp
+    B(M) = 0.0_dp  
     F(M) = 0.0_dp
 
     ! Метод прогонки
@@ -235,9 +236,10 @@ contains
         alpha(k+1) = B(k) / (C(k) - alpha(k) * A(k))
     end do
 
-    do k = 1, M
+    do k = 1, M-1
         beta(k+1) = (beta(k) * A(k) + F(k)) / (C(k) - alpha(k) * A(k))
     end do
+    beta(M+1) = 0
     ! Обратный ход
     y(M) = beta(M+1)
     do k = M-1, 0, -1
@@ -286,8 +288,8 @@ contains
                (1 - sigma)*(A(k)*n_i_i(k-1) - &
                (C(k) - 1/(sigma* tau))*n_i_i(k) + B(k)*n_i_i(k+1))
     end do
-    A(M) = gamma_i * l_i / h_k(M-1)
-    C(M) = 1.0_dp + gamma_i * l_i / h_k(M-1)
+    A(M) = 0.0_dp !gamma_i * l_i / h_k(M-1)
+    C(M) = 0.0_dp !1.0_dp + gamma_i * l_i / h_k(M-1)
     B(M) = 0.0_dp
     F(M) = 0.0_dp
 
@@ -298,9 +300,10 @@ contains
         alpha(k+1) = B(k) / (C(k) - alpha(k) * A(k))
     end do
 
-    do k =1, M
+    do k =1, M - 1 
         beta(k+1) = (beta(k) * A(k) + F(k)) / (C(k) - alpha(k) * A(k))
     end do
+    beta(M+1) = 0
     ! Обратный ход
     y(M) = beta(M+1)
     do k = M-1, 0, -1
@@ -424,19 +427,19 @@ contains
         end if
     end do
     end subroutine solve_iterations
-
+    
     function df_dr(f1, f2, f3, delta1, delta2)
         real(dp) :: f1, f2, f3, delta1, delta2, df_dr
         df_dr = ((f2 - f1) / delta1 ** 2 + (f3 - f2) / delta2 ** 2) / (1 / delta1 + 1 / delta2)
     end function df_dr
 
-    subroutine show_parameters(n_e, n_i, E_r, time)
+    subroutine show_parameters(n_e, n_i, E_r, time, r_k)
         real(dp), intent(in) :: time
-        real(dp), intent(in) :: n_e(0:M), n_i(0:M), E_r(0:M)
+        real(dp), intent(in) :: n_e(0:M), n_i(0:M), E_r(0:M), r_k(0:M)
         real(dp) :: potential(0:M), j_e(0:M), j_i(0:M)
-        character(len=10) :: time_name
+        character(len=20) :: time_name
 
-        write (time_name, '(F10.8)') time
+        write (time_name, '(F12.10)') time
         open(11, file = 'potential_t='//trim(time_name)//'.txt', status = 'new')
         open(12, file = 'j_e_t='//trim(time_name)//'.txt', status = 'new')
         open(13, file = 'j_i_t='//trim(time_name)//'.txt', status = 'new')
@@ -457,13 +460,13 @@ contains
             h_k(k-1), h_k(k)) + k_i * n_i(k) * E_r(k)
         end do
 
-        j_e(M) = -D_e * (n_e(M) - n_e(M-1)) / h_k(M-1) - k_e * n_e(M) * E_r(M)
-        j_i(M) = -D_i * (n_i(M) - n_i(M-1)) / h_k(M-1) + k_i * n_i(M) * E_r(M)
+        !j_e(M) = -D_e * (n_e(M) - n_e(M-1)) / h_k(M-1) - k_e * n_e(M) * E_r(M)
+        !j_i(M) = -D_i * (n_i(M) - n_i(M-1)) / h_k(M-1) + k_i * n_i(M) * E_r(M)
 
-        do k = 0, M
-            write (11, *) potential(k)
-            write (12, *) j_e(k)
-            write (13, *) j_i(k)
+        do k = 0, M - 1
+            write (11, '(2ES20.10)') r_k(k), potential(k)
+            write (12, '(2ES20.10)') r_k(k), j_e(k)
+            write (13, '(2ES20.10)') r_k(k), j_i(k)
         end do
 
         close(11)
