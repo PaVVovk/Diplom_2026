@@ -3,12 +3,12 @@ implicit none
     integer, parameter :: dp = kind(1.0d0)
     integer :: M, k, step_count, t_counter
     integer, parameter :: T_count = 50
-    real(dp) :: r0, delta, h_first, sigma, tau
+    real(dp) :: r0, delta, h_first, sigma, tau, E_all
     real(dp), allocatable :: r_k(:), r_half_k(:), h_k(:), h_half_k(:)
     real(dp) :: l_e, l_i, D_e, D_i, k_e, k_i, nu_ion
     real(dp) :: p, N, t_max, t, t0 
 
-    real(dp), parameter :: k_b = 1.380649E-19_dp !в см^2
+    real(dp), parameter :: k_b = 1.380649E-23_dp 
     real(dp), parameter :: e = 1.602176634E-19_dp
     real(dp), parameter :: gamma_e = 0.7104_dp
     real(dp), parameter :: gamma_i = 0.7104_dp
@@ -27,11 +27,12 @@ implicit none
     read *, r0
     print *, 'Enter the DELTA thickening parameter:'
     read *, delta
-    print *, 'Enter a numeric parameter sigma'
-    read *, sigma
+    !print *, 'Enter a numeric parameter sigma'
+    !read *, sigma
+    sigma = 0.5_dp
     print *, 'Enter the pressure in pascals'
     read *, p
-    !p = 1
+    
 
     ! Выделение памяти
     allocate(r_k(0:M))
@@ -48,15 +49,17 @@ implicit none
     !Значения коэффициентов
     N = p/(k_b*T_gas)
     print *, 'N = ', N
-    nu_ion = 0.8093E-16_dp*N*1E6 !1/c
-    k_e = 0.7890E+24_dp/N/100 !см^2/(В*с)
-    k_i = 0.286_dp + 0.669_dp*EXP(-E/(N*179.5_dp)) + 0.679_dp*EXP(-E/(N*1305_dp)) !см^2 / (В * с)
-    D_e = 0.6932E+25_dp/N/100 !см^2/c
-    D_i = k_i*T/e !см^2/с
+    nu_ion = 0.8093E-16_dp*N*1E6 
+    E_all = 1e-21_dp*N*100
+    k_e = 0.7890E+24_dp/N
+    k_i = (0.286_dp + 0.669_dp*EXP(-E_all/(N*179.5_dp)) + 0.679_dp*EXP(-E_all/(N*1305_dp)))*1e-4 
+    D_e = 0.6932E+25_dp/N
+    D_i = k_i*T/e 
     l_e = 1/(N*1E-20_dp) 
     l_i = 1/(N*1E-20_dp)
     n_i_i = nu_ion/beta_ei
     n_e_i = n_i_i
+ 
     E_r_i = 0.0_dp
     t = 0
     t_max = 1e-4
@@ -151,7 +154,7 @@ implicit none
         end do
 
         if (t > t_out(t_counter)) then
-            call show_parameters(n_e_final, n_i_final, E_r_final, t, r_k)
+            call show_parameters(n_e_final, n_i_final, n_e_i, n_i_i, E_r_i, t)
             t_counter = t_counter+1
         end if
         !print *, 'n_e_final = ', n_e_final(M/2)
@@ -222,7 +225,7 @@ contains
     !A(M) = gamma_e*l_e/h_k(M-1)
     !C(M) = 1.0_dp + gamma_e * l_e / h_k(M-1)
     A(M) = 0.0_dp
-    C(M) = 0.0_dp
+    C(M) = 1.0_dp
     B(M) = 0.0_dp  
     F(M) = 0.0_dp
 
@@ -236,10 +239,9 @@ contains
         alpha(k+1) = B(k) / (C(k) - alpha(k) * A(k))
     end do
 
-    do k = 1, M-1
+    do k = 1, M
         beta(k+1) = (beta(k) * A(k) + F(k)) / (C(k) - alpha(k) * A(k))
     end do
-    beta(M+1) = 0
     ! Обратный ход
     y(M) = beta(M+1)
     do k = M-1, 0, -1
@@ -288,8 +290,10 @@ contains
                (1 - sigma)*(A(k)*n_i_i(k-1) - &
                (C(k) - 1/(sigma* tau))*n_i_i(k) + B(k)*n_i_i(k+1))
     end do
-    A(M) = 0.0_dp !gamma_i * l_i / h_k(M-1)
-    C(M) = 0.0_dp !1.0_dp + gamma_i * l_i / h_k(M-1)
+    !A(M) = gamma_i * l_i / h_k(M-1)
+    !C(M) = 1.0_dp + gamma_i * l_i / h_k(M-1)
+    A(M) = 0.0_dp
+    C(M) = 1.0_dp
     B(M) = 0.0_dp
     F(M) = 0.0_dp
 
@@ -300,10 +304,9 @@ contains
         alpha(k+1) = B(k) / (C(k) - alpha(k) * A(k))
     end do
 
-    do k =1, M - 1 
+    do k =1, M  
         beta(k+1) = (beta(k) * A(k) + F(k)) / (C(k) - alpha(k) * A(k))
     end do
-    beta(M+1) = 0
     ! Обратный ход
     y(M) = beta(M+1)
     do k = M-1, 0, -1
@@ -400,13 +403,15 @@ contains
             error_E =  abs(E_r_m1(j) - E_r_m(j)) / max(abs(E_r_m1(j)), 1.0_dp)
             max_error = max(error_ne, error_ni, error_E, max_error)
         end do
-       ! print *, 'n_e_m1= ', n_e_m1(M/2)
-        !print *, 'n_i_m1= ', n_i_m1(M/2)
-        !print *, 'E_r_m1= ', E_r_m1(M/2)
-       ! print *, 'error_ne= ', error_ne
-        !print *, 'error_ni= ', error_ni
-        !print *, 'error_E= ',  error_E
-        !print *, 'max_error= ', max_error
+        !do j = 0, M
+            !print *, 'n_e_m1= ', n_e_m1(j)
+            !print *, 'n_i_m1= ', n_i_m1(j)
+            !print *, 'E_r_m1= ', E_r_m1(j)
+            !print *, 'error_ne= ', error_ne
+            !print *, 'error_ni= ', error_ni
+            !print *, 'error_E= ',  error_E
+            !print *, 'max_error= ', max_error
+        !end do
         do j = 0, M
             n_e_m(j) = n_e_m1(j)
             n_i_m(j) = n_i_m1(j)
@@ -428,38 +433,55 @@ contains
     end do
     end subroutine solve_iterations
     
-    function df_dr(f1, f2, f3, delta1, delta2)
-        real(dp) :: f1, f2, f3, delta1, delta2, df_dr
-        df_dr = ((f2 - f1) / delta1 ** 2 + (f3 - f2) / delta2 ** 2) / (1 / delta1 + 1 / delta2)
+    function df_dr(f1, f2, delta)
+        real(dp) :: f1, f2, delta, df_dr
+        df_dr = (f2 - f1)/delta
+        !df_dr = (delta2*(f2 - f1) / delta1  + delta1*(f3 - f2) / delta2) / ( delta1 + delta2)
     end function df_dr
 
-    subroutine show_parameters(n_e, n_i, E_r, time, r_k)
+    subroutine show_parameters(n_e_final, n_i_final, n_e_i, n_i_i, E_r_i, time)
         real(dp), intent(in) :: time
-        real(dp), intent(in) :: n_e(0:M), n_i(0:M), E_r(0:M), r_k(0:M)
-        real(dp) :: potential(0:M), j_e(0:M), j_i(0:M)
+        real(dp), intent(in) :: n_e_final(0:M), n_i_final(0:M)
+        real(dp), intent(in) :: n_e_i(0:M), n_i_i(0:M), E_r_i(0:M)
+        real(dp) :: potential(0:M), j_e(0:M), j_i(0:M), difference_e(1:M-1), difference_i(1:M-1)
         character(len=20) :: time_name
 
-        write (time_name, '(F12.10)') time
+        write (time_name, '(F20.18)') time
         open(11, file = 'potential_t='//trim(time_name)//'.txt', status = 'new')
         open(12, file = 'j_e_t='//trim(time_name)//'.txt', status = 'new')
         open(13, file = 'j_i_t='//trim(time_name)//'.txt', status = 'new')
+        !open(14, file = 'n_e_t='//trim(time_name)//'.txt', status = 'new')
+        !open(15, file = 'n_i_t='//trim(time_name)//'.txt', status = 'new')
 
         potential(0) = 0
+        
         do k = 1, M
-            potential(k) = potential(k-1) + (E_r_final(k) + E_r_final(k-1)) * h_k(k-1) / 2.0_dp
+            potential(k) = potential(k-1) + (E_r_i(k) + E_r_i(k-1)) * h_k(k-1) / 2.0_dp
         end do
-
+          
         j_e(0) = 0
         j_i(0) = 0
-
         do k = 1, M-1
-            j_e(k) = - D_e * df_dr(n_e(k-1), n_e(k), n_e(k+1), &
-            h_k(k-1), h_k(k)) - k_e * n_e(k) * E_r(k)
-
-            j_i(k) = - D_i * df_dr(n_i(k-1), n_i(k), n_i(k+1), &
-            h_k(k-1), h_k(k)) + k_i * n_i(k) * E_r(k)
-        end do
-
+            difference_e(k) = n_e_final(k) - n_e_i(k)
+            if (difference_e(k) > 0) then
+                j_e(k) = - D_e * df_dr(n_e_i(k), n_e_i(k+1), h_k(k)) & 
+                - k_e * n_e_i(k) * E_r_i(k)
+            else
+                j_e(k) = - D_e * df_dr(n_e_i(k-1), n_e_i(k), h_k(k-1)) & 
+                - k_e * n_e_i(k) * E_r_i(k)
+            end if
+        end do    
+        do k = 1, M - 1
+            difference_i(k) = n_i_final(k) - n_i_i(k)
+            if(difference_i(k) > 0) then
+                j_i(k) = - D_i * df_dr(n_i_i(k), n_i_i(k+1), h_k(k-1)) &
+                + k_i * n_i_i(k) * E_r_i(k)
+            else 
+                 j_i(k) = - D_i * df_dr(n_i_i(k-1), n_i_i(k), h_k(k-1)) &
+                 + k_i * n_i_i(k) * E_r_i(k)
+            end if
+        end do	
+		        		 	    
         !j_e(M) = -D_e * (n_e(M) - n_e(M-1)) / h_k(M-1) - k_e * n_e(M) * E_r(M)
         !j_i(M) = -D_i * (n_i(M) - n_i(M-1)) / h_k(M-1) + k_i * n_i(M) * E_r(M)
 
@@ -468,10 +490,16 @@ contains
             write (12, '(2ES20.10)') r_k(k), j_e(k)
             write (13, '(2ES20.10)') r_k(k), j_i(k)
         end do
+        !do k = 0, M
+            !write (14, '(2ES20.10)') r_k(k), n_e(k)
+            !write (15, '(2ES20.10)') r_k(k), n_i(k)
+        !end do
 
         close(11)
         close(12)
         close(13)
+        !close(14)
+        !close(15)
 
     end subroutine show_parameters
 end program concentration
