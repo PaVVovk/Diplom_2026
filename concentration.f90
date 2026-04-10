@@ -3,17 +3,17 @@ implicit none
     integer, parameter :: dp = kind(1.0d0)
     integer :: M, k, step_count, t_counter
     integer, parameter :: T_count = 50
-    real(dp) :: r0, delta, h_first, sigma, tau, E_all
+    real(dp) :: r0, delta, h_first, sigma, tau, E_divide_N
     real(dp), allocatable :: r_k(:), r_half_k(:), h_k(:), h_half_k(:)
     real(dp) :: l_e, l_i, D_e, D_i, k_e, k_i, nu_ion
     real(dp) :: p, N, t_max, t, t0 
 
-    real(dp), parameter :: k_b = 1.380649E-23_dp 
-    real(dp), parameter :: e = 1.602176634E-19_dp
-    real(dp), parameter :: gamma_e = 0.7104_dp
+    real(dp), parameter :: k_b = 1.380649E-23_dp !Дж/К
+    real(dp), parameter :: e = 1.602176634E-19_dp !Кл
+    real(dp), parameter :: gamma_e = 0.7104_dp 
     real(dp), parameter :: gamma_i = 0.7104_dp
-    real(dp), parameter :: T_gas = 300_dp
-    real(dp), parameter :: beta_ei = 1E-12
+    real(dp), parameter :: T_gas = 300_dp  !К
+    real(dp), parameter :: beta_ei = 1E-18 ! м^3/c
 
     real(dp), allocatable :: n_e_i(:), n_i_i(:), E_r_i(:)
     real(dp), allocatable :: n_e_final(:), n_i_final(:), E_r_final(:)
@@ -47,22 +47,21 @@ implicit none
     allocate(E_r_final(0:M))
 
     !Значения коэффициентов
-    N = p/(k_b*T_gas)
+    N = p/(k_b*T_gas) ! 1/м^3
     print *, 'N = ', N
-    nu_ion = 0.8093E-16_dp*N*1E6 
-    E_all = 1e-21_dp*N*100
-    k_e = 0.7890E+24_dp/N
-    k_i = (0.286_dp + 0.669_dp*EXP(-E_all/(N*179.5_dp)) + 0.679_dp*EXP(-E_all/(N*1305_dp)))*1e-4 
-    D_e = 0.6932E+25_dp/N
-    D_i = k_i*T/e 
+    nu_ion = 0.8093E-16_dp*N !1/c
+    E_divide_N = 100   !Тд
+    k_e = 0.7890E+24_dp/N  ! м^2/(В*с)
+    k_i = ((0.286_dp + 0.669_dp*EXP(-E_divide_N/179.5_dp) + 0.679_dp*EXP(-E_divide_N*1305_dp)))*1e-4 ! м^2/(В*с) 
+    D_e = 0.6932E+25_dp/N  ! м^2/c 
+    D_i = k_i*T/e  !м^2/c
     l_e = 1/(N*1E-20_dp) 
     l_i = 1/(N*1E-20_dp)
     n_i_i = nu_ion/beta_ei
     n_e_i = n_i_i
- 
     E_r_i = 0.0_dp
-    t = 0
-    t_max = 1e-4
+    t = 0.0_dp
+    t_max = 1e-4_dp
     step_count = 0
 
 
@@ -121,7 +120,8 @@ implicit none
     if (minval(h_k) < 1e-30) then
         print *, 'ATTENTION: very small step!'
     end if
-
+    print *, 'n_e_i = ', n_e_i
+    print *, 'n_i_i = ', n_i_i
     !Заполняем массив t_out
 
     t0 = t_max / 10 ** (T_count / 10)
@@ -450,8 +450,8 @@ contains
         open(11, file = 'potential_t='//trim(time_name)//'.txt', status = 'new')
         open(12, file = 'j_e_t='//trim(time_name)//'.txt', status = 'new')
         open(13, file = 'j_i_t='//trim(time_name)//'.txt', status = 'new')
-        !open(14, file = 'n_e_t='//trim(time_name)//'.txt', status = 'new')
-        !open(15, file = 'n_i_t='//trim(time_name)//'.txt', status = 'new')
+        open(14, file = 'n_e_t='//trim(time_name)//'.txt', status = 'new')
+        open(15, file = 'n_i_t='//trim(time_name)//'.txt', status = 'new')
 
         potential(0) = 0
         
@@ -474,7 +474,7 @@ contains
         do k = 1, M - 1
             difference_i(k) = n_i_final(k) - n_i_i(k)
             if(difference_i(k) > 0) then
-                j_i(k) = - D_i * df_dr(n_i_i(k), n_i_i(k+1), h_k(k-1)) &
+                j_i(k) = - D_i * df_dr(n_i_i(k), n_i_i(k+1), h_k(k)) &
                 + k_i * n_i_i(k) * E_r_i(k)
             else 
                  j_i(k) = - D_i * df_dr(n_i_i(k-1), n_i_i(k), h_k(k-1)) &
@@ -490,16 +490,16 @@ contains
             write (12, '(2ES20.10)') r_k(k), j_e(k)
             write (13, '(2ES20.10)') r_k(k), j_i(k)
         end do
-        !do k = 0, M
-            !write (14, '(2ES20.10)') r_k(k), n_e(k)
-            !write (15, '(2ES20.10)') r_k(k), n_i(k)
-        !end do
+        do k = 0, M
+            write (14, '(2ES20.10)') r_k(k), n_e_i(k)
+            write (15, '(2ES20.10)') r_k(k), n_i_i(k)
+        end do
 
         close(11)
         close(12)
         close(13)
-        !close(14)
-        !close(15)
+        close(14)
+        close(15)
 
     end subroutine show_parameters
 end program concentration

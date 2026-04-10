@@ -1,0 +1,58 @@
+BOLSIG+ version: 03/2016
+Collision input data:
+--------------------------------------------------
+Ar                                                              
+C:\Users\Никитос\Desktop\Диплом\LXCat-June2013.txt
+How to reference in publications:
+1) Yamabe, Buckman, and Phelps, Phys. Rev. 27, 1345 (1983). Revised Oct 1997
+2) PHELPS database,http://www.lxcat.laplace.univ-tlse.fr, retrieved June 4, 2013.
+ 
+ 
+ 
+R7  
+------------------------------------------------------------
+Electric field / N (Td)                    700.0    
+Angular frequency / N (m3/s)               0.000    
+Cosine of E-B field angle                  0.000    
+Gas temperature (K)                        300.0    
+Excitation temperature (K)                 300.0    
+Transition energy (eV)                     0.000    
+Ionization degree                          0.000    
+Plasma density (1/m3)                     0.1000E+19
+Ion charge parameter                       0.000    
+Ion/neutral mass ratio                     1.000    
+e-e momentum effects                       0.000    
+Energy sharing                             1.000    
+Growth model                               1.000    
+Maxwellian mean energy (eV)                0.000    
+# of grid points                           100.0    
+Grid type                                  0.000    
+Maximum energy                             10.00    
+Precision                                 0.1000E-09
+Convergence                               0.1000E-04
+Maximum # of iterations                    2000.    
+Mole fraction Ar                           1.000    
+------------------------------------------------------------
+Mean energy (eV)                           12.12    
+Mobility *N (1/m/V/s)                     0.6204E+24
+Diffusion coefficient *N (1/m/s)          0.6309E+25
+Energy mobility *N (1/m/V/s)              0.9884E+24
+Energy diffusion coef. D*N (1/m/s)        0.7516E+25
+Total collision freq. /N (m3/s)           0.2187E-12
+Momentum frequency /N (m3/s)              0.2835E-12
+Total ionization freq. /N (m3/s)          0.7521E-14
+Townsend ioniz. coef. alpha/N (m2)        0.1732E-19
+Power /N (eV m3/s)                        0.3040E-12
+Elastic power loss /N (eV m3/s)           0.8862E-16
+Inelastic power loss /N (eV m3/s)         0.2128E-12
+Growth power /N (eV m3/s)                 0.9119E-13
+Maximum energy                             239.9    
+# of iterations                            21.00    
+# of grid trials                           3.000    
+------------------------------------------------------------
+Rate coefficients (m3/s)
+C1    Ar    Effective (momentum)          0.2187E-12
+C2    Ar    Excitation    11.50 eV        0.8169E-14
+C3    Ar    Ionization    15.80 eV        0.7521E-14
+ 
+ 
