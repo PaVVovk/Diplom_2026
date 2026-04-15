@@ -2,3 +2,5 @@
 *.exe
 *.cbp
 *.txt
+*.zip
+Data*/

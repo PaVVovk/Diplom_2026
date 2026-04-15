@@ -6,11 +6,12 @@ implicit none
     real(dp) :: r0, delta, h_first, sigma, tau, E_divide_N
     real(dp), allocatable :: r_k(:), r_half_k(:), h_k(:), h_half_k(:)
     real(dp) :: l_e, l_i, D_e, D_i, k_e, k_i, nu_ion
-    real(dp) :: p, N, t_max, t, t0 
+    real(dp) :: p, N, t_max, t, t0
 
+    real(dp), parameter :: pi = 3.141592653589793_dp
     real(dp), parameter :: k_b = 1.380649E-23_dp !Дж/К
     real(dp), parameter :: e = 1.602176634E-19_dp !Кл
-    real(dp), parameter :: gamma_e = 0.7104_dp 
+    real(dp), parameter :: gamma_e = 0.7104_dp
     real(dp), parameter :: gamma_i = 0.7104_dp
     real(dp), parameter :: T_gas = 300_dp  !К
     real(dp), parameter :: beta_ei = 1E-18 ! м^3/c
@@ -19,6 +20,15 @@ implicit none
     real(dp), allocatable :: n_e_final(:), n_i_final(:), E_r_final(:)
     real(dp) :: t_out(0:T_count)
     logical :: repeat_flag
+    character(len=30) :: folder_name
+
+    folder_name = data_string()
+    call create_folder(folder_name)
+    call create_folder(subf("\n_e"))
+    call create_folder(subf("\n_i"))
+    call create_folder(subf("\j_e"))
+    call create_folder(subf("\j_i"))
+    call create_folder(subf("\potential"))
 
     ! Ввод параметров
     print *, 'Enter the number of intervals M:'
@@ -32,7 +42,7 @@ implicit none
     sigma = 0.5_dp
     print *, 'Enter the pressure in pascals'
     read *, p
-    
+
 
     ! Выделение памяти
     allocate(r_k(0:M))
@@ -52,10 +62,10 @@ implicit none
     nu_ion = 0.8093E-16_dp*N !1/c
     E_divide_N = 100   !Тд
     k_e = 0.7890E+24_dp/N  ! м^2/(В*с)
-    k_i = ((0.286_dp + 0.669_dp*EXP(-E_divide_N/179.5_dp) + 0.679_dp*EXP(-E_divide_N*1305_dp)))*1e-4 ! м^2/(В*с) 
-    D_e = 0.6932E+25_dp/N  ! м^2/c 
+    k_i = ((0.286_dp + 0.669_dp*EXP(-E_divide_N/179.5_dp) + 0.679_dp*EXP(-E_divide_N*1305_dp)))*1e-4 ! м^2/(В*с)
+    D_e = 0.6932E+25_dp/N  ! м^2/c
     D_i = k_i*T/e  !м^2/c
-    l_e = 1/(N*1E-20_dp) 
+    l_e = 1/(N*1E-20_dp)
     l_i = 1/(N*1E-20_dp)
     n_i_i = nu_ion/beta_ei
     n_e_i = n_i_i
@@ -140,22 +150,18 @@ implicit none
         if (mod(step_count, 10) == 0) then
             print *, 'Step:', step_count, 't =', t, 'tau =', tau
         end if
-        call solve_iterations(M, r_k, r_half_k, sigma, tau, gamma_e, l_e, gamma_i, l_i, &
-                           D_e, D_i, k_e, k_i, nu_ion, beta_ei, &
-                           n_e_i, n_i_i, E_r_i, &
+        call solve_iterations(n_e_i, n_i_i, E_r_i, &
                            n_e_final, n_i_final, E_r_final, &
-                           repeat_flag, h_half_k, h_k)
+                           repeat_flag, tau)
         do while(repeat_flag .eqv. .true.)
-            call solve_iterations(M, r_k, r_half_k, sigma, tau, gamma_e, l_e, gamma_i, l_i, &
-                               D_e, D_i, k_e, k_i, nu_ion, beta_ei, &
-                               n_e_i, n_i_i, E_r_i, &
-                               n_e_final, n_i_final, E_r_final, &
-                               repeat_flag,  h_half_k, h_k)
+            call solve_iterations(n_e_i, n_i_i, E_r_i, &
+                           n_e_final, n_i_final, E_r_final, &
+                           repeat_flag, tau)
         end do
 
         if (t > t_out(t_counter)) then
-            call show_parameters(n_e_final, n_i_final, n_e_i, n_i_i, E_r_i, t)
-            t_counter = t_counter+1
+            call write_parameters(n_e_final, n_i_final, n_e_i, n_i_i, E_r_i, t, t_counter)
+            t_counter = t_counter + 1
         end if
         !print *, 'n_e_final = ', n_e_final(M/2)
         !print *, 'n_i_final = ', n_i_final(M/2)
@@ -185,17 +191,10 @@ contains
 
     !Прогонка для электронов
 
-    subroutine solve_electron_continuity(M, sigma, tau, h_k, h_half_k, r_k, &
-                                      r_half_k, gamma_e, l_e, n_e_m1, D_e, &
-                                      nu_ion, beta_ei, k_e, n_i_im, &
-                                      n_e_i, E_r_im)
+    subroutine solve_electron_continuity(n_e_i, n_i_im, E_r_im, n_e_m1)
     implicit none
-    integer, intent(in) :: M
-    real(dp), intent(in) :: sigma, tau
-    real(dp), intent(in) :: h_k(0:M-1), h_half_k(1:M-1), r_k(0:M), r_half_k(0:M-1)
     real(dp), intent(in) :: n_e_i(0:M)
     real(dp), intent(in) :: n_i_im(0:M), E_r_im(0:M)
-    real(dp), intent(in) :: gamma_e, l_e, D_e, nu_ion, beta_ei, k_e
     real(dp), intent(out) :: n_e_m1(0:M)
 
     integer :: k
@@ -226,7 +225,7 @@ contains
     !C(M) = 1.0_dp + gamma_e * l_e / h_k(M-1)
     A(M) = 0.0_dp
     C(M) = 1.0_dp
-    B(M) = 0.0_dp  
+    B(M) = 0.0_dp
     F(M) = 0.0_dp
 
     ! Метод прогонки
@@ -256,14 +255,9 @@ contains
 
     !Прогонка для ионов
 
-    subroutine solve_ion_continuity(M, sigma, tau, h_k, h_half_k, r_k, &
-                                      r_half_k, gamma_i, n_i_i, l_i, n_i_m1, D_i, &
-                                      nu_ion, n_e_im, E_r_im,beta_ei, k_i)
-    integer, intent(in) :: M
-    real(dp), intent(in) :: sigma, tau
-    real(dp), intent(in) :: h_k(0:M-1), h_half_k(1:M-1), r_k(0:M), r_half_k(0:M-1)
-    real(dp), intent(in) :: n_e_im(0:M), E_r_im(0:M), n_i_i(0:M)
-    real(dp), intent(in) :: gamma_i, l_i, D_i, nu_ion, beta_ei, k_i
+    subroutine solve_ion_continuity(n_i_i, n_e_im, E_r_im, n_i_m1)
+    real(dp), intent(in) :: n_i_i(0:M)
+    real(dp), intent(in) :: n_e_im(0:M), E_r_im(0:M)
     real(dp), intent(out) :: n_i_m1(0:M)
 
     integer :: k
@@ -304,7 +298,7 @@ contains
         alpha(k+1) = B(k) / (C(k) - alpha(k) * A(k))
     end do
 
-    do k =1, M  
+    do k = 1, M
         beta(k+1) = (beta(k) * A(k) + F(k)) / (C(k) - alpha(k) * A(k))
     end do
     ! Обратный ход
@@ -320,16 +314,14 @@ contains
     end subroutine solve_ion_continuity
 
     !Решение уравнения Пуассона
-    subroutine solve_poisson_trapezoidal(M, r_k, h_k, n_e_m1, n_i_m1, E_r_m1)
+    subroutine solve_poisson_trapezoidal(n_e_m1, n_i_m1, E_r_m1)
     implicit none
-    integer, intent(in) :: M
-    real(dp), intent(in) :: r_k(0:M), h_k(0:M-1)
     real(dp), intent(in) :: n_e_m1(0:M), n_i_m1(0:M)
     real(dp), intent(out) :: E_r_m1(0:M)
 
     integer :: k
     real(dp) :: F(1:M), const
-    const = 2.0_dp*3.141592653589793_dp*1.602176634E-19_dp
+    const = 2.0_dp * pi * e
     E_r_m1(0) = 0
     E_r_m1(1) = const*h_k(0)*((n_i_m1(1)-n_e_m1(1)) + &
                  (n_i_m1(0) - n_e_m1(0)))
@@ -343,18 +335,12 @@ contains
 
     !Итерации
 
-    subroutine solve_iterations(M, r_k, r_half_k, sigma, tau, gamma_e, l_e, gamma_i, l_i, &
-                           D_e, D_i, k_e, k_i, nu_ion, beta_ei, &
-                           n_e_i, n_i_i, E_r_i, &
-                           n_e_final, n_i_final, E_r_final, &
-                           repeat_flag, h_half_k, h_k)
+    subroutine solve_iterations(n_e_i, n_i_i, E_r_i, &
+                                n_e_final, n_i_final, E_r_final, &
+                                repeat_flag, tau)
 
     ! Входные параметры
 
-    integer, intent(in) :: M
-    real(dp), intent(in) :: sigma, r_k(0:M), r_half_k(0:M-1), h_half_k(1:M-1), h_k(0:M-1)
-    real(dp), intent(in) :: gamma_e, l_e, gamma_i, l_i
-    real(dp), intent(in) :: D_e, D_i, k_e, k_i, nu_ion, beta_ei
     real(dp), intent(in) :: n_e_i(0:M), n_i_i(0:M), E_r_i(0:M)
     logical, intent(inout) :: repeat_flag
     real(dp), intent(inout) :: tau
@@ -387,20 +373,14 @@ contains
             n_i_im(j) = sigma * n_i_m(j) + (1.0_dp - sigma) * n_i_i(j)
             E_r_im(j) = sigma * E_r_m(j) + (1.0_dp - sigma) * E_r_i(j)
         end do
-        call solve_electron_continuity(M, sigma, tau, h_k, h_half_k, r_k, &
-                                      r_half_k, gamma_e, l_e, n_e_m1, D_e, &
-                                      nu_ion, beta_ei, k_e, n_i_im, &
-                                      n_e_i, E_r_im)
-
-        call solve_ion_continuity(M, sigma, tau, h_k, h_half_k, r_k, &
-                                      r_half_k, gamma_i, n_i_i, l_i, n_i_m1, D_i, &
-                                      nu_ion, n_e_im, E_r_im,beta_ei, k_i)
-        call solve_poisson_trapezoidal(M, r_k, h_k, n_e_m1, n_i_m1, E_r_m1)
+        call solve_electron_continuity(n_e_i, n_i_im, E_r_im, n_e_m1)
+        call solve_ion_continuity(n_i_i, n_e_im, E_r_im, n_i_m1)
+        call solve_poisson_trapezoidal(n_e_m1, n_i_m1, E_r_m1)
 
          do j = 0, M
-            error_ne = abs(n_e_m1(j) - n_e_m(j)) / max(abs(n_e_m1(j)), 1.0_dp)
-            error_ni = abs(n_i_m1(j) - n_i_m(j)) / max(abs(n_i_m1(j)), 1.0_dp)
-            error_E =  abs(E_r_m1(j) - E_r_m(j)) / max(abs(E_r_m1(j)), 1.0_dp)
+            error_ne = abs(n_e_m1(j) - n_e_m(j)) / abs(n_e_m1(j))
+            error_ni = abs(n_i_m1(j) - n_i_m(j)) / abs(n_i_m1(j))
+            error_E =  abs(E_r_m1(j) - E_r_m(j)) / abs(E_r_m1(j))
             max_error = max(error_ne, error_ni, error_E, max_error)
         end do
         !do j = 0, M
@@ -432,67 +412,90 @@ contains
         end if
     end do
     end subroutine solve_iterations
-    
-    function df_dr(f1, f2, delta)
-        real(dp) :: f1, f2, delta, df_dr
+
+    real(dp) function df_dr(f1, f2, delta)
+        real(dp) :: f1, f2, delta
         df_dr = (f2 - f1)/delta
         !df_dr = (delta2*(f2 - f1) / delta1  + delta1*(f3 - f2) / delta2) / ( delta1 + delta2)
     end function df_dr
 
-    subroutine show_parameters(n_e_final, n_i_final, n_e_i, n_i_i, E_r_i, time)
+    subroutine create_folder(folder_name)
+        character(len=*), intent(in) :: folder_name
+        character(len=10), parameter :: MKDIR = 'mkdir '
+        integer :: folder_status
+
+        folder_status = system(MKDIR // folder_name)
+        if (folder_status /= 0) then
+            print *, 'mkdir: failed to create folder!'
+        end if
+    end subroutine
+
+    subroutine write_parameters(n_e_final, n_i_final, n_e_i, n_i_i, E_r_i, time, ind)
+
+        integer, intent(in) :: ind
         real(dp), intent(in) :: time
         real(dp), intent(in) :: n_e_final(0:M), n_i_final(0:M)
         real(dp), intent(in) :: n_e_i(0:M), n_i_i(0:M), E_r_i(0:M)
         real(dp) :: potential(0:M), j_e(0:M), j_i(0:M), difference_e(1:M-1), difference_i(1:M-1)
-        character(len=20) :: time_name
+        character(len=100) :: filepath
+        character(len=40) :: filename
+        integer :: file_code, i
 
-        write (time_name, '(F20.18)') time
-        open(11, file = 'potential_t='//trim(time_name)//'.txt', status = 'new')
-        open(12, file = 'j_e_t='//trim(time_name)//'.txt', status = 'new')
-        open(13, file = 'j_i_t='//trim(time_name)//'.txt', status = 'new')
-        open(14, file = 'n_e_t='//trim(time_name)//'.txt', status = 'new')
-        open(15, file = 'n_i_t='//trim(time_name)//'.txt', status = 'new')
+        character(len=20) :: parameters(1:5)
+        data parameters /"potential","j_e","j_i","n_e","n_i"/
+
+
+        do i = 1, 5
+            filename = ""
+            file_code = 10 + i
+            write(filename, "(A,A,I0)") trim(parameters(i)), "_", ind
+            print *, filename
+
+            filepath = trim(subf("\" // parameters(i))) // "\" // &
+                       trim(filename) // ".txt"
+            print *, filepath
+            open(file_code, file = filepath, status = "new")
+            write(file_code, "(A,E16.8,A)") "Time = ", time, " seconds"
+        end do
 
         potential(0) = 0
-        
+
         do k = 1, M
             potential(k) = potential(k-1) + (E_r_i(k) + E_r_i(k-1)) * h_k(k-1) / 2.0_dp
         end do
-          
+
         j_e(0) = 0
         j_i(0) = 0
         do k = 1, M-1
             difference_e(k) = n_e_final(k) - n_e_i(k)
             if (difference_e(k) > 0) then
-                j_e(k) = - D_e * df_dr(n_e_i(k), n_e_i(k+1), h_k(k)) & 
+                j_e(k) = - D_e * df_dr(n_e_i(k), n_e_i(k+1), h_k(k)) &
                 - k_e * n_e_i(k) * E_r_i(k)
             else
-                j_e(k) = - D_e * df_dr(n_e_i(k-1), n_e_i(k), h_k(k-1)) & 
+                j_e(k) = - D_e * df_dr(n_e_i(k-1), n_e_i(k), h_k(k-1)) &
                 - k_e * n_e_i(k) * E_r_i(k)
             end if
-        end do    
+        end do
         do k = 1, M - 1
             difference_i(k) = n_i_final(k) - n_i_i(k)
             if(difference_i(k) > 0) then
                 j_i(k) = - D_i * df_dr(n_i_i(k), n_i_i(k+1), h_k(k)) &
                 + k_i * n_i_i(k) * E_r_i(k)
-            else 
+            else
                  j_i(k) = - D_i * df_dr(n_i_i(k-1), n_i_i(k), h_k(k-1)) &
                  + k_i * n_i_i(k) * E_r_i(k)
             end if
-        end do	
-		        		 	    
-        !j_e(M) = -D_e * (n_e(M) - n_e(M-1)) / h_k(M-1) - k_e * n_e(M) * E_r(M)
-        !j_i(M) = -D_i * (n_i(M) - n_i(M-1)) / h_k(M-1) + k_i * n_i(M) * E_r(M)
-
-        do k = 0, M - 1
-            write (11, '(2ES20.10)') r_k(k), potential(k)
-            write (12, '(2ES20.10)') r_k(k), j_e(k)
-            write (13, '(2ES20.10)') r_k(k), j_i(k)
         end do
+
+        j_e(M) = -D_e * (n_e_i(M) - n_e_i(M-1)) / h_k(M-1) - k_e * n_e_i(M) * E_r_i(M)
+        j_i(M) = -D_i * (n_i_i(M) - n_i_i(M-1)) / h_k(M-1) + k_i * n_i_i(M) * E_r_i(M)
+
         do k = 0, M
-            write (14, '(2ES20.10)') r_k(k), n_e_i(k)
-            write (15, '(2ES20.10)') r_k(k), n_i_i(k)
+            write (11, '(F20.6,A,E20.6)') r_k(k)," ", potential(k)
+            write (12, '(F20.6,A,E20.6)') r_k(k)," ", j_e(k)
+            write (13, '(F20.6,A,E20.6)') r_k(k)," ", j_i(k)
+            write (14, '(F20.6,A,E20.6)') r_k(k)," ", n_e_i(k)
+            write (15, '(F20.6,A,E20.6)') r_k(k)," ", n_i_i(k)
         end do
 
         close(11)
@@ -501,5 +504,33 @@ contains
         close(14)
         close(15)
 
-    end subroutine show_parameters
+    end subroutine
+
+    character(len=2) function str(num)
+        integer, intent(in) :: num
+        if (num < 10) then
+            write(str, "(A,I0)") "0", num
+        else
+            write(str, "(I0)") num
+        end if
+    end function str
+
+    character(len=30) function data_string()
+        integer :: dt(8)
+        call date_and_time(values=dt)
+        !character(len=2) :: day, month, minute, second
+        write (data_string, "(A,A,A,A,A,I0,A,A,A,A,A,A)") "Data_", &
+                            str(dt(3)), "-", str(dt(2)), "-", dt(1), "_", &
+                            str(dt(5)), "-", str(dt(6)), "-", str(dt(7))
+    end function data_string
+
+    character(len=50) function subf(name)
+        character(len=*), intent(in) :: name
+        subf = trim(folder_name) // "\" // adjustl(name)
+    end function subf
+
+    !subroutine read_bolsig()
+
+    !end subroutine
+
 end program concentration
