@@ -20,9 +20,9 @@ implicit none
     real(dp), allocatable :: n_e_final(:), n_i_final(:), E_r_final(:)
     real(dp) :: t_out(0:T_count)
     logical :: repeat_flag
-    character(len=30) :: folder_name
+    character(len=50) :: folder_name
 
-    folder_name = data_string()
+    folder_name = "Data_Fortran\" // data_string()
     call create_folder(folder_name)
     call create_folder(subf("\n_e"))
     call create_folder(subf("\n_i"))
@@ -437,7 +437,7 @@ contains
         real(dp), intent(in) :: n_e_final(0:M), n_i_final(0:M)
         real(dp), intent(in) :: n_e_i(0:M), n_i_i(0:M), E_r_i(0:M)
         real(dp) :: potential(0:M), j_e(0:M), j_i(0:M), difference_e(1:M-1), difference_i(1:M-1)
-        character(len=100) :: filepath
+        character(len=150) :: filepath
         character(len=40) :: filename
         integer :: file_code, i
 
@@ -524,7 +524,7 @@ contains
                             str(dt(5)), "-", str(dt(6)), "-", str(dt(7))
     end function data_string
 
-    character(len=50) function subf(name)
+    character(len=100) function subf(name)
         character(len=*), intent(in) :: name
         subf = trim(folder_name) // "\" // adjustl(name)
     end function subf
