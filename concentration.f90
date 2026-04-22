@@ -20,6 +20,8 @@ implicit none
     real(dp), allocatable :: n_e_final(:), n_i_final(:), E_r_final(:)
     real(dp) :: t_out(0:T_count)
     logical :: repeat_flag
+
+    character(len=*), parameter :: bolsig_name = "Data"
     character(len=50) :: folder_name
 
     folder_name = "Data_Fortran\" // data_string()
