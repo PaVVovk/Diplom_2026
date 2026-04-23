@@ -1,3 +1,6 @@
+import numpy as np
+from itertools import product
+
 def get_float(prompt, default):
     val = input(f"{prompt} [default {default}]: ").strip()
     return float(val) if val else default
@@ -6,11 +9,38 @@ def get_int(prompt, default):
     val = input(f"{prompt} [default {default}]: ").strip()
     return int(val) if val else default
 
-def main():
+def get_var(prompt, default):
+    val = input(f"{prompt} [default {default}, VAR if variable]: ").strip()
+    if val.upper() == "VAR":
+        start, end, points = map(float, input("Enter start, end and number of variable points: ").split())
+        points = int(points)
+        return "VAR", np.linspace(start, end, points)
+    if val:
+        return float(val), []
+    else:
+        return default, []
+
+def combination_generator(*arrays):
+    """Генератор комбинаций, не хранит всё в памяти"""
+    for combo in product(*arrays):
+        yield combo
+
+def form_run_str(var_params):
+    run_str = ""
+    arrays = [x[1] for x in var_params.values()]
+    for combo in combination_generator(*arrays):
+        run_str += ' '.join(map(str, combo)) + "\n"
+    return run_str
+
+def create_bolsig_input_data(data_name, output_name, coll_data_path="LXCat-June2013.txt"):
     print("Ввод параметров CONDITIONS:")
+
+    var_params = {
+        'e_n': get_var("Electric field / N (Td)", 1.0),
+    }
     
     params = {
-        'e_n': get_float("Electric field / N (Td)", 1.0),
+        'e_n': var_params['e_n'][0],
         'ang_freq': get_float("Angular field frequency / N (m3/s)", 0.0),
         'cos_eb': get_float("Cosine of E-B field angle", 0.0),
         'gas_temp': get_float("Gas temperature (K)", 300.0),
@@ -31,9 +61,11 @@ def main():
         'convergence': get_float("Convergence", 1e-4),
         'max_iter': get_int("Maximum # of iterations", 2000),
     }
+
+    run_str = form_run_str(var_params)
     
     output = f"""READCOLLISIONS
-LXCat-June2013.txt / File
+{coll_data_path} / File
 Ar / Species
 1 / Extrapolate: 0= No 1= Yes
 
@@ -60,10 +92,10 @@ CONDITIONS
 {params['max_iter']} / Maximum # of iterations
 
 RUN
-...
+{run_str}
 
 SAVERESULTS
-example.dat / File
+{output_name} / File
 2 / Format: 1=Run by run; 2=Combined; 3=E/N; 4=Energy; 5=SIGLO; 6=PLASIMO
 0 / Conditions: 0=No; 1=Yes
 1 / Transport coefficients: 0=No; 1=Yes
@@ -73,10 +105,7 @@ example.dat / File
 0 / Distribution function: 0=No; 1=Yes
 0 / Skip failed runs: 0=No; 1=Yes"""
     
-    filename = input("Имя выходного файла: ").strip() + ".txt"
+    filename = data_name
     with open(filename, 'w') as f:
         f.write(output)
-    print(f"\nФайл {filename} создан")
-
-if __name__ == "__main__":
-    main()
+    #print(f"Файл {filename} создан")
