@@ -2,16 +2,16 @@
 subroutine solve_ion_continuity(tau,n_i_m1,n_e_im,E_r_im)
     use variables
     implicit none
-   real(dp), intent(in) :: tau
+    real(dp), intent(in) :: tau
     real(dp), intent(in) :: n_e_im(0:M), E_r_im(0:M)
     real(dp), intent(out) :: n_i_m1(0:M)
 
     integer :: k
     real(dp) :: A(0:M), B(0:M), C(0:M), F(0:M)
-    real(dp) :: alpha(0:M+1), beta(0:M+1)
+    real(dp) :: alpha(1:M), beta(1:M)
     real(dp) :: y(0:M)
 
-    real(dp) :: a_k, b_k, u_k, w_k, sitau
+    real(dp) :: a_k, b_k, u_k, w_k, sitau, ttt
 !---------------------------------------------
     sitau = 1.0_dp/(sigma*tau)
     B(0) = 4.0_dp*D_i/(h_k(0)**2) - 2.0_dp*k_i*E_r_im(1)/h_k(0)
@@ -34,23 +34,19 @@ subroutine solve_ion_continuity(tau,n_i_m1,n_e_im,E_r_im)
     B(M) = 0.0_dp
     F(M) = 0.0_dp
 
-    ! Прямой ход
+! Прямой ход
     alpha(1) = B(0) / C(0)
     beta(1) = F(0) / C(0)
     do k = 1, M-1
-        alpha(k+1) = B(k) / (C(k) - alpha(k) * A(k))
+        ttt = C(k) - alpha(k) * A(k)
+        alpha(k+1) = B(k) / ttt
+        beta(k+1) = (beta(k) * A(k) + F(k)) / ttt
     end do
-
-    do k =1, M
-        beta(k+1) = (beta(k) * A(k) + F(k)) / (C(k) - alpha(k) * A(k))
-    end do
+    ttt = (beta(M) * A(M) + F(M)) / (C(M) - alpha(M) * A(M)) !beta(M+1)
     ! Обратный ход
-    y(M) = beta(M+1)
+    y(M) = ttt; n_i_m1(M) = y(M) / sigma
     do k = M-1, 0, -1
         y(k) = alpha(k+1) * y(k+1) + beta(k+1)
-    end do
-
-    do k = 0, M
         n_i_m1(k) = y(k) / sigma
     end do
 

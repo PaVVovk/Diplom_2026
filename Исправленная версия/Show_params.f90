@@ -47,8 +47,8 @@ implicit none
             end if
         end do
 
-        j_e(M) = -D_e * (n_e_i(M) - n_e_i(M-1)) / h_k(M-1) - k_e * n_e_i(M) * E_r_i(M)
-        j_i(M) = -D_i * (n_i_i(M) - n_i_i(M-1)) / h_k(M-1) + k_i * n_i_i(M) * E_r_i(M)
+        !j_e(M) = -D_e * (n_e(M) - n_e(M-1)) / h_k(M-1) - k_e * n_e(M) * E_r(M)
+        !j_i(M) = -D_i * (n_i(M) - n_i(M-1)) / h_k(M-1) + k_i * n_i(M) * E_r(M)
         write (11, *) 'r_k',ch,'n_e(',ch,'n_i(',ch,'potential',ch,'E_r',ch,'j_e',ch,'j_i'
         do k = 0, M - 1
         write (11, 11) r_k(k),ch,n_e_i(k),ch,n_i_i(k),ch,potential(k),ch,E_r_i(k),ch,j_e(k),ch,j_i(k)

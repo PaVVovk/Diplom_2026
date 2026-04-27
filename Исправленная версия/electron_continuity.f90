@@ -9,10 +9,10 @@
 
     integer :: k
     real(dp) :: A(0:M), B(0:M), C(0:M), F(0:M)
-    real(dp) :: alpha(0:M+1), beta(0:M+1)
+    real(dp) :: alpha(1:M), beta(1:M)
     real(dp) :: y(0:M)
 
-    real(dp) :: a_k, b_k, u_k, w_k, sitau
+    real(dp) :: a_k, b_k, u_k, w_k, sitau,ttt
 !----------------------------------------------------------------------------------------
     sitau = 1.0_dp/(sigma*tau)
 !
@@ -42,21 +42,17 @@
     alpha(1) = B(0) / C(0)
     beta(1) = F(0) / C(0)
     do k = 1, M-1
-    !Сохранить знаменатель в отдельную перем
-        alpha(k+1) = B(k) / (C(k) - alpha(k) * A(k))
+        ttt = C(k) - alpha(k) * A(k)
+        alpha(k+1) = B(k) / ttt
+        beta(k+1) = (beta(k) * A(k) + F(k)) / ttt
     end do
-
-    do k = 1, M
-        beta(k+1) = (beta(k) * A(k) + F(k)) / (C(k) - alpha(k) * A(k))
-    end do
-    ! Обратный ход
-    y(M) = beta(M+1)
+!        beta(M+1) = (beta(M) * A(M) + F(M)) / (C(M) - alpha(M) * A(M))
+    ttt = (beta(M) * A(M) + F(M)) / (C(M) - alpha(M) * A(M))
+! Обратный ход
+    y(M) = ttt! beta(M+1)
+    n_e_m1(M) = y(M) / sigma
     do k = M-1, 0, -1
         y(k) = alpha(k+1) * y(k+1) + beta(k+1)
-    end do
-
-    do k = 0, M
         n_e_m1(k) = y(k) / sigma
     end do
-
-    end subroutine solve_electron_continuity
+end subroutine solve_electron_continuity
