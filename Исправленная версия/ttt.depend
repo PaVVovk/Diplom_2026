@@ -1,0 +1,15 @@
+# depslib dependency file v1.0
+1776249073 source:b:\students\khomyakov_vovk\ttt\concentration.f90
+
+1776235516 source:b:\students\khomyakov_vovk\ttt\electron_continuity.f90
+
+1776235929 source:b:\students\khomyakov_vovk\ttt\functions.f90
+
+1776236494 source:b:\students\khomyakov_vovk\ttt\ion_continuity.f90
+
+1776249423 source:b:\students\khomyakov_vovk\ttt\iterations.f90
+
+1776235929 source:b:\students\khomyakov_vovk\ttt\poisson.f90
+
+1776249033 source:b:\students\khomyakov_vovk\ttt\show_params.f90
+
