@@ -27,7 +27,7 @@
             n_i_im(j) = sigma * n_i_m(j) + sigm1 * n_i_i(j)
             E_r_im(j) = sigma * E_r_m(j) + sigm1 * E_r_i(j)
         end do
-        call solve_electron_continuity(tau,n_e_m1,n_i_im,E_r_im)
+        call solve_electron_continuity(tau,n_e_m1,n_i_im,E_r_im) 
         do j = 0, M
             error_ne = abs(n_e_m1(j) - n_e_m(j))! / ne_max
             max_error_e= max(error_ne, max_error_e)
@@ -66,10 +66,12 @@
         end if
         if (k == iter) then
             tau = tau/2.0_dp
-            print *, 'tau = ', tau  !; READ(*,*)
+            !print *, 'tau = ', tau  !; READ(*,*)
             repeat_flag = .true.
             if (tau < 1.0e-30) then
                 print *, 'ERRROR: tau is too low'
+                read(*,*)
+                stop
             end if 
         end if
     end do

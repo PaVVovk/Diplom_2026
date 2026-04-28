@@ -1,0 +1,36 @@
+BOLSIG+ version: 03/2016
+Collision input data:
+--------------------------------------------------
+Ar                                                              
+LXCat-June2013.txt
+How to reference in publications:
+1) Yamabe, Buckman, and Phelps, Phys. Rev. 27, 1345 (1983). Revised Oct 1997
+2) PHELPS database,http://www.lxcat.laplace.univ-tlse.fr, retrieved June 4, 2013.
+ 
+ 
+ 
+ Transport coefficients
+A1     Mean energy (eV)                                                
+A2     Mobility *N (1/m/V/s)                                           
+A6     Diffusion coefficient *N (1/m/s)                                
+A11    Energy mobility *N (1/m/V/s)                                    
+A12    Energy diffusion coef. D*N (1/m/s)                              
+A13    Total collision freq. /N (m3/s)                                 
+A14    Momentum frequency /N (m3/s)                                    
+A16    Total ionization freq. /N (m3/s)                                
+A18    Townsend ioniz. coef. alpha/N (m2)                              
+A20    Power /N (eV m3/s)                                              
+A21    Elastic power loss /N (eV m3/s)                                 
+A22    Inelastic power loss /N (eV m3/s)                               
+A23    Growth power /N (eV m3/s)                                       
+A27    Maximum energy                                                  
+A28    # of iterations                                                 
+A29    # of grid trials                                                
+          R#    E/N (Td)      A1          A2          A6         A11         A12         A13         A14         A16         A18         A20         A21         A22         A23         A27         A28         A29    
+           1   5.000       5.023      0.1033E+25  0.8056E+25  0.1478E+25  0.6162E+25  0.1026E-12  0.1702E-12   0.000       0.000      0.2583E-16  0.1883E-16  0.7005E-17   0.000       15.55       6.000       1.000    
+           2   253.8       8.352      0.7053E+24  0.6348E+25  0.1041E+25  0.5656E+25  0.1826E-12  0.2494E-12  0.9113E-15  0.5092E-20  0.4541E-13  0.5459E-16  0.3775E-13  0.7613E-14   79.20       12.00       2.000    
+           3   502.5       10.37      0.6473E+24  0.6155E+25  0.1006E+25  0.6510E+25  0.2057E-12  0.2717E-12  0.3926E-14  0.1207E-19  0.1634E-12  0.7336E-16  0.1226E-12  0.4075E-13   164.2       19.00       3.000    
+           4   751.2       12.60      0.6147E+24  0.6379E+25  0.9837E+24  0.7811E+25  0.2215E-12  0.2861E-12  0.8594E-14  0.1861E-19  0.3469E-12  0.9275E-16  0.2386E-12  0.1083E-12   256.4       19.00       3.000    
+           5   1000.       15.10      0.5912E+24  0.6850E+25  0.9599E+24  0.9394E+25  0.2335E-12  0.2975E-12  0.1443E-13  0.2440E-19  0.5912E-12  0.1140E-15  0.3733E-12  0.2180E-12   398.3       27.00       4.000    
+ 
+ 

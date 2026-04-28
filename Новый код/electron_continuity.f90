@@ -8,7 +8,7 @@
     real(dp), intent(out) :: n_e_m1(0:M)
 
     integer :: k
-    real(dp) :: A(0:M), B(0:M), C(0:M), F(0:M)
+    real(dp) :: A(1:M), B(0:M), C(0:M), F(0:M)
     real(dp) :: alpha(1:M), beta(1:M)
     real(dp) :: y(0:M)
 
@@ -27,7 +27,16 @@
         B(k) = b_k * (D_e/h_k(k) + k_e*E_r_im(k+1)/2.0_dp)
         C(k) = sitau - nu_ion + beta_ei * n_i_im(k) + w_k * D_e - u_k * k_e * E_r_im(k)
         F(k) = n_e_i(k)/tau + sigm1 * (A(k)*n_e_i(k-1) - (C(k) - sitau)*n_e_i(k) + B(k)*n_e_i(k+1))
-    end do
+       !if (abs(C(k)) > 1.0e30 .or. abs(B(k)) > 1.0e30) then
+		   !print *, 'EXPLOSION detected at k =', k
+		   !print *, 'C(k)=', C(k), 'B(k)=', B(k), 'F(k)=', F(k)
+		   !read(*,*)
+	   !end if 
+	end do
+    !print *, 'A_K = ', maxval(A)
+    !print *, 'B_K = ', maxval(B)
+    !print *, 'C_K = ', maxval(C)
+    !print *, 'F_K = ', maxval(F)
 
     !A(M) = gamma_e*l_e/h_k(M-1)
     !C(M) = 1.0_dp + gamma_e * l_e / h_k(M-1)

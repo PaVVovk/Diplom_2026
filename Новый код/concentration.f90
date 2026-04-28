@@ -19,6 +19,7 @@ end module variables
 !----------------------------------------------------------------
 program concentration
     use variables
+    use bolsig_data
     implicit none
     integer :: k, step_count, t_counter
     integer, parameter :: T_count = 50
@@ -26,7 +27,10 @@ program concentration
     real(dp) :: t_max,t,t0,dt,EN,ne0,D_amb,nu_amb
     real(dp) :: t_out(0:T_count)
     logical :: repeat_flag
-!
+    type(bolsig_data_t) :: big_data
+    
+    big_data = read_bolsig_file('collected_data.dat')
+    EN = big_data%E_over_N(1)
     ch_nt0 = '_Data\'
     k_maxit = 3; iter = 8; tol = 1.0E-6_dp
     beta_ei = 1.0d-8*1.0d-6  !fav 1 cm^3/s -> m^3/s
@@ -35,8 +39,8 @@ program concentration
     const = 1.602176634E-19_dp/(2.0_dp*epsilon0)  !from 4\pi e = e/\epsilon_0
     EN = 100.0_dp !fav E/N in Td = 1.0e-17 V cm^2 = 1.0e-21 V m^2
     EN = 40.37_dp; T_e = 6.087_dp*2.0_dp/3.0_dp
-    k_e = 8.51E+23_dp; D_e = 7.03E+24_dp
-    k_ion = 2.29E-18_dp
+    k_e = 9.006E+23_dp; D_e = 7.419E+24_dp
+    k_ion = 2.517E-18_dp
     ! Ввод параметров
     M = 101     !fav
     print *, 'Enter the number of intervals M. Now M = ',M     !fav
@@ -65,7 +69,7 @@ program concentration
     N_L = 1.01d5/(k_b*300.0_dp)     !fav
     N = p/(k_b*T_gas)
     print *, 'N = ', N
-    nu_ion = k_ion*N!   !*1.0d6 !!!0.8093E-16_dp
+    nu_ion = k_ion *N!   !*1.0d6 !!!0.8093E-16_dp
     E_all = 1.0d-21*N*EN
     k_e = k_e/N !0.7890E+24_dp/N
 !    k_i = (0.286_dp + 0.669_dp*EXP(-E_all/(N*179.5_dp)) + 0.679_dp*EXP(-E_all/(N*1305_dp)))*1e-4
@@ -74,7 +78,7 @@ program concentration
     k_i = k_i*N_L/N  !fav
     D_e = D_e/N    !0.6932d25/N
     D_i = k_i*(k_b*T_gas/e) !fav
-    D_amb = (D_e*k_i + D_i*k_e)/(k_e+k_i); nu_amb = 5.76_dp*r0**2/D_amb
+    D_amb = (D_e*k_i + D_i*k_e)/(k_e+k_i); nu_amb = 5.78_dp*D_amb/r0**2
     l_e = 1.0_dp/(N*1E-20_dp)
     l_i = 1.0_dp/(N*1E-20_dp)
     ne0 = nu_ion/beta_ei
@@ -84,6 +88,7 @@ program concentration
     print *, 'k_e,D_e,n_e_i = ', k_e,D_e,n_e_i(1)  !tmp
     print *, 'nu_ion,b_ei = ',nu_ion,beta_ei
     print *, 'D_amb,nu_amb =',D_amb,nu_amb
+    print *, 'Press any button to begin'
     READ (*,*)
 !
     E_r_i = 0.0_dp
@@ -103,7 +108,7 @@ program concentration
         r_k(k+1) = r_k(k) + h_k(k)
         r_half_k(k) = (r_k(k) + r_k(k+1)) / 2.0_dp
     end do
-!        r_half_k(M) = r_k(M)    !fav
+!       r_half_k(M) = r_k(M)    !fav
     do k = 1, M-1
         h_half_k(k) = (h_k(k-1) + h_k(k)) / 2.0_dp
         a_km(k) = (r_half_k(k-1)/r_k(k))/h_half_k(k)
@@ -174,7 +179,10 @@ go to 123   !fav
     end do
 
     tau = minval(h_k**2/(4.0_dp*D_e))
-    call ambipolar(D_amb,r0,ne0)
+    call ambipolar(D_amb, nu_amb, ne0)
+    !do k = 0, M
+        !print *, n_e_i(k), ch, n_i_i(k)
+    !end do
     t_counter = 0
     call show_parameters(t_counter, t)
     t_counter = t_counter+1
@@ -182,7 +190,7 @@ go to 123   !fav
         repeat_flag = .false.
         step_count = step_count + 1
 
-        if (mod(step_count, 1000) == 0) then
+        if (mod(step_count, 10000) == 0) then
             print *, 'Step:', step_count, 't =', t, 'tau =', tau
         end if
         call solve_iterations(tau,repeat_flag)

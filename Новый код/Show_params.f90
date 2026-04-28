@@ -26,25 +26,11 @@ implicit none
 
         j_e(0) = 0.0_dp
         j_i(0) = 0.0_dp
-        do k = 1, M-1
-            difference_e(k) = n_e_final(k) - n_e_i(k)
-            if (difference_e(k) > 0) then
-                j_e(k) = - D_e * df_dr(n_e_i(k), n_e_i(k+1), h_k(k)) &
-                - k_e * n_e_i(k) * E_r_i(k)
-            else
-                j_e(k) = - D_e * df_dr(n_e_i(k-1), n_e_i(k), h_k(k-1)) &
-                - k_e * n_e_i(k) * E_r_i(k)
-            end if
-        end do
-        do k = 1, M - 1
-            difference_i(k) = n_i_final(k) - n_i_i(k)
-            if(difference_i(k) > 0) then
-                j_i(k) = - D_i * df_dr(n_i_i(k), n_i_i(k+1), h_k(k-1)) &
-                + k_i * n_i_i(k) * E_r_i(k)
-            else
-                 j_i(k) = - D_i * df_dr(n_i_i(k-1), n_i_i(k), h_k(k-1)) &
-                 + k_i * n_i_i(k) * E_r_i(k)
-            end if
+        do k = 0, M - 1
+            j_e(k) = r_half_k(k) * (-(D_e*n_e_i(k+1) - D_e*n_e_i(k))/h_k(k) + &
+            (k_e*n_e_i(k+1)*E_r_i(k+1) + k_e*n_e_i(k)*E_r_i(k))/2)
+            j_i(k) = r_half_k(k) * (-(D_e*n_i_i(k+1) - D_e*n_i_i(k))/h_k(k) + &
+            (k_e*n_i_i(k+1)*E_r_i(k+1) + k_e*n_i_i(k)*E_r_i(k))/2)
         end do
 
         !j_e(M) = -D_e * (n_e(M) - n_e(M-1)) / h_k(M-1) - k_e * n_e(M) * E_r(M)
@@ -57,7 +43,7 @@ implicit none
 !            write (13, '(2ES20.10)') r_k(k), j_i(k)
         end do
         ! Линейной экстраполяцией по двум последним точкам вспомогательной сетки около стенки найти потоки на стенку.
-        write (11, 11) r_k(M),ch,n_e_i(M),ch,n_i_i(M),ch,potential(M),ch,E_r_i(M),ch,j_e(M),ch,j_i(M)
+        write (11, 11) r_k(M),ch,n_e_i(M),ch,n_i_i(M),ch,potential(M),ch,E_r_i(M)
 11 format (1p,E15.6,6(a,E15.6))
         !do k = 0, M
             !write (14, '(2ES20.10)') r_k(k), n_e(k)

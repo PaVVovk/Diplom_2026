@@ -9,7 +9,7 @@
     real(dp) :: F(1:M)
     E_r_m1(0) = 0
 !SQ    E_r_m1(1) = const*h_k(0)*( (n_i_m1(1)-n_e_m1(1)) + (n_i_m1(0) - n_e_m1(0)) )
-    E_r_m1(1) = const*h_k(0)*( (n_i_m1(1)-n_e_m1(1)) + (n_i_m1(0) - n_e_m1(0)) )
+    E_r_m1(1) = const*h_k(0)*( (n_i_m1(1)-n_e_m1(1)) + (n_i_m1(0) - n_e_m1(0)) )/2.0_dp
      F(1) = r_k(1)*E_r_m1(1)
     do k = 2, M
         F(k) = F(k-1) + const*h_k(k-1)*(r_k(k-1)*(n_i_m1(k-1)-n_e_m1(k-1))+ &
