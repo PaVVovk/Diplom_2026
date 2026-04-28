@@ -1,0 +1,8 @@
+*.o
+*.exe
+*.cbp
+*.txt
+*.zip
+Data*/
+
+!bolsigminus.exe
