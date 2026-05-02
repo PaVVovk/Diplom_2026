@@ -1,11 +1,12 @@
 subroutine show_parameters(t_counter, time)
 use variables
+use functions
 implicit none
     integer, intent(in) :: t_counter
     real(dp), intent(in) :: time
     real(dp) :: potential(0:M), j_e(0:M), j_i(0:M), difference_e(1:M-1), difference_i(1:M-1)
-    real(dp) df_dr
-    integer k
+    integer :: k
+    real(dp) :: eps_e(0:M-1), eps_i(0:M-1)
     character(len=20) :: time_name
     character*4 name
 !
@@ -26,11 +27,13 @@ implicit none
 
         j_e(0) = 0.0_dp
         j_i(0) = 0.0_dp
-        do k = 0, M - 1
-            j_e(k) = r_half_k(k) * (-(D_e*n_e_i(k+1) - D_e*n_e_i(k))/h_k(k) + &
-            (k_e*n_e_i(k+1)*E_r_i(k+1) + k_e*n_e_i(k)*E_r_i(k))/2)
-            j_i(k) = r_half_k(k) * (-(D_e*n_i_i(k+1) - D_e*n_i_i(k))/h_k(k) + &
-            (k_e*n_i_i(k+1)*E_r_i(k+1) + k_e*n_i_i(k)*E_r_i(k))/2)
+        eps_e = epsilon_e(E_r_i)
+        eps_i = epsilon_i(E_r_i)
+        do k = 1, M 
+            j_e(k-1) = r_half_k(k-1)*(-(D_e*n_e_i(k) - D_e*n_e_i(k-1))/h_k(k-1) - &
+            (eps_e(k-1)*n_e_i(k) + (1 - eps_e(k-1))*n_e_i(k-1))*k_e*E_r_i(k-1))
+            j_i(k-1) = r_half_k(k-1)*(-(D_e*n_i_i(k) - D_e*n_i_i(k-1))/h_k(k-1) + &
+            (eps_i(k-1)*n_i_i(k) + (1 - eps_i(k-1))*n_i_i(k-1))*k_i*E_r_i(k-1))
         end do
 
         !j_e(M) = -D_e * (n_e(M) - n_e(M-1)) / h_k(M-1) - k_e * n_e(M) * E_r(M)

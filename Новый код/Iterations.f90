@@ -23,9 +23,10 @@
 
     do k = 1, iter
         max_error_e = 0.0_dp; max_error_i = 0.0_dp; max_err_E = 0.0_dp
-        do j = 0, M
+        do j = 0, M - 1 
             n_i_im(j) = sigma * n_i_m(j) + sigm1 * n_i_i(j)
             E_r_im(j) = sigma * E_r_m(j) + sigm1 * E_r_i(j)
+            n_i_im(M) = sigma * n_i_m(M) + sigm1 * n_i_i(M)
         end do
         call solve_electron_continuity(tau,n_e_m1,n_i_im,E_r_im) 
         do j = 0, M

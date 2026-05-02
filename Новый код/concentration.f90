@@ -48,7 +48,7 @@ program concentration
     r0 = 1.0_dp     !fav
     print *, 'Enter the radius of the tube r0. Now r0 = ',r0 ,' cm'    !fav
     read *, r0; r0 = r0/100.0_dp
-    delta = -0.02_dp     !fav
+    delta = -0.01_dp     !fav
     print *, 'Enter the DELTA thickening parameter. Now delta = ',delta     !fav
     read *, delta
     !print *, 'Enter a numeric parameter sigma'

@@ -1,6 +1,7 @@
 !Прогонка для ионов
 subroutine solve_ion_continuity(tau,n_i_m1,n_e_im,E_r_im)
     use variables
+    use functions
     implicit none
     real(dp), intent(in) :: tau
     real(dp), intent(in) :: n_e_im(0:M), E_r_im(0:M)
@@ -9,20 +10,22 @@ subroutine solve_ion_continuity(tau,n_i_m1,n_e_im,E_r_im)
     integer :: k
     real(dp) :: A(1:M), B(0:M), C(0:M), F(0:M)
     real(dp) :: alpha(1:M), beta(1:M)
-    real(dp) :: y(0:M)
+    real(dp) :: y(0:M), eps_i(0:M-1)
 
     real(dp) :: a_k, b_k, u_k, w_k, sitau, ttt
 !---------------------------------------------
     sitau = 1.0_dp/(sigma*tau)
-    B(0) = 4.0_dp*D_i/(h_k(0)**2) - 2.0_dp*k_i*E_r_im(1)/h_k(0)
+    eps_i = epsilon_i(E_r_im)
+    
+    B(0) = 4.0_dp*D_i/(h_k(0)**2) - 2.0_dp*k_i*E_r_im(0)/h_k(0)
     C(0) = 1.0_dp/(sigma*tau) + beta_ei*n_e_im(0) + 4.0_dp*D_i/(h_k(0)**2)
     F(0) = n_i_i(0)/tau + nu_ion*n_e_im(0) + &
            sigm1*(B(0)*n_i_i(1) - (C(0) - sitau)*n_i_i(0))
     do k = 1, M-1
         a_k = a_km(k); b_k = b_km(k); u_k = u_km(k); w_k = w_km(k)
-        A(k) = a_k*(D_i/h_k(k-1) + k_i*E_r_im(k-1)/2)
+        A(k) = a_k*(D_i/h_k(k-1) + (1-eps_i(k-1))*k_i*E_r_im(k-1))
         B(k) = b_k*(D_i/h_k(k)) !- k_i*E_r_im(k+1)/2)
-        C(k) = sitau + beta_ei*n_e_im(k) + w_k*D_i + b_k*k_i*E_r_im(k) !u_k*k_i*E_r_im(k)
+        C(k) = sitau + beta_ei*n_e_im(k) + w_k*D_i + b_k*(1-eps_i(k))*k_i*E_r_im(k) !u_k*k_i*E_r_im(k)
         F(k) = n_i_i(k)/tau + nu_ion*n_e_im(k) + &
                sigm1*(A(k)*n_i_i(k-1) - &
                (C(k) - sitau)*n_i_i(k) + B(k)*n_i_i(k+1))
