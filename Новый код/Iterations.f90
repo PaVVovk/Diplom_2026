@@ -9,9 +9,9 @@
     !Локальные переменные
     integer :: k, j
     real(dp) :: error_ne, error_ni, error_E
-    real(dp) :: n_e_m(0:M), n_i_m(0:M), E_r_m(0:M)
-    real(dp) :: n_e_im(0:M), n_i_im(0:M), E_r_im(0:M)
-    real(dp) :: n_e_m1(0:M), n_i_m1(0:M), E_r_m1(0:M)
+    real(dp) :: n_e_m(0:M), n_i_m(0:M), E_r_m(0:M-1)
+    real(dp) :: n_e_im(0:M), n_i_im(0:M), E_r_im(0:M-1)
+    real(dp) :: n_e_m1(0:M), n_i_m1(0:M), E_r_m1(0:M-1)
     real(dp) :: max_error_e,max_error_i,max_err_E, ne_max,ni_max,E_max
 
     n_e_m = n_e_i
@@ -52,11 +52,13 @@
 !f            error_E =  abs(E_r_m1(j) - E_r_m(j))! / E_max
 !f            max_err_E = max(error_E, max_err_E)!, error_E)!)
 !f        end do
-       do j = 0, M
+       do j = 0, M-1
             n_e_m(j) = n_e_m1(j)
             n_i_m(j) = n_i_m1(j)
             E_r_m(j) = E_r_m1(j)
         end do
+        n_e_m(M) = n_e_m1(M)
+        n_i_m(M) = n_i_m1(M)
         if (max_error_e + max_error_i < tol) then
             n_e_final = n_e_m1
             n_i_final = n_i_m1
@@ -69,11 +71,11 @@
             tau = tau/2.0_dp
             !print *, 'tau = ', tau  !; READ(*,*)
             repeat_flag = .true.
-            if (tau < 1.0e-30) then
-                print *, 'ERRROR: tau is too low'
-                read(*,*)
-                stop
-            end if 
+            !if (tau < 1.0e-30) then
+                !print *, 'ERRROR: tau is too low'
+                !read(*,*)
+                !stop
+            !end if 
         end if
     end do
     end subroutine solve_iterations

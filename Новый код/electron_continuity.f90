@@ -5,7 +5,7 @@
     use functions 
     implicit none
     real(dp), intent(in) :: tau
-    real(dp), intent(in) :: n_i_im(0:M), E_r_im(0:M)
+    real(dp), intent(in) :: n_i_im(0:M), E_r_im(0:M-1)
     real(dp), intent(out) :: n_e_m1(0:M)
 
     integer :: k
@@ -24,20 +24,20 @@
 
     do k = 1, M-1
         a_k = a_km(k); b_k = b_km(k); u_k = u_km(k); w_k = w_km(k)
-        A(k) = a_k * (D_e/h_k(k-1) - k_e*(1 - eps_e(k-1))*E_r_im(k-1)/2.0_dp)
-        B(k) = b_k * (D_e/h_k(k) + k_e*eps_e(k)*E_r_im(k)/2.0_dp)
+        A(k) = a_k * (D_e/h_k(k-1) - k_e*(1 - eps_e(k-1))*E_r_im(k-1))
+        B(k) = b_k * (D_e/h_k(k) + k_e*eps_e(k)*E_r_im(k))
         C(k) = sitau - nu_ion + beta_ei * n_i_im(k) + w_k * D_e - &
-        b_k * k_e *(1-eps_e(k))*E_r_im(k)/2 + a_k*k_e *eps_e(k-1)*E_r_im(k-1)/2
+        b_k * k_e *(1-eps_e(k))*E_r_im(k) + a_k*k_e *eps_e(k-1)*E_r_im(k-1)
         F(k) = n_e_i(k)/tau + sigm1 * (A(k)*n_e_i(k-1) - (C(k) - sitau)*n_e_i(k) + B(k)*n_e_i(k+1))
         !A(k) = a_k * (D_e/h_k(k-1) - k_e*E_r_im(k-1)/2.0_dp)
         !B(k) = b_k * (D_e/h_k(k) + k_e*E_r_im(k+1)/2.0_dp)
         !C(k) = sitau - nu_ion + beta_ei * n_i_im(k) + w_k * D_e - u_k * k_e * E_r_im(k)
         !F(k) = n_e_i(k)/tau + sigm1 * (A(k)*n_e_i(k-1) - (C(k) - sitau)*n_e_i(k) + B(k)*n_e_i(k+1))
-       !if (abs(C(k)) > 1.0e30 .or. abs(B(k)) > 1.0e30) then
-		   !print *, 'EXPLOSION detected at k =', k
-		   !print *, 'C(k)=', C(k), 'B(k)=', B(k), 'F(k)=', F(k)
-		   !read(*,*)
-	   !end if 
+       if (abs(C(k)) > 1.0e30 .or. abs(B(k)) > 1.0e30) then
+		   print *, 'EXPLOSION detected at k =', k
+		   print *, 'C(k)=', C(k), 'B(k)=', B(k), 'F(k)=', F(k)
+		   read(*,*)
+	   end if 
 	end do
     !print *, 'A_K = ', maxval(A)
     !print *, 'B_K = ', maxval(B)

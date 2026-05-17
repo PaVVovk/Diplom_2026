@@ -21,8 +21,8 @@ implicit none
 
         potential(0) = 0
 
-        do k = 1, M
-            potential(k) = potential(k-1) + (E_r_i(k) + E_r_i(k-1)) * h_k(k-1) / 2.0_dp
+        do k = 0, M-1 
+            potential(k+1) = potential(k) + E_r_i(k) * h_k(k) / 2.0_dp
         end do
 
         j_e(0) = 0.0_dp
@@ -30,11 +30,11 @@ implicit none
         eps_e = epsilon_e(E_r_i)
         eps_i = epsilon_i(E_r_i)
         do k = 1, M 
-            j_e(k-1) = r_half_k(k-1)*(-(D_e*n_e_i(k) - D_e*n_e_i(k-1))/h_k(k-1) - &
+            j_e(k-1) = r_half_k(k-1)*(-D_e*(n_e_i(k) - n_e_i(k-1))/h_k(k-1) - &
             (eps_e(k-1)*n_e_i(k) + (1 - eps_e(k-1))*n_e_i(k-1))*k_e*E_r_i(k-1))
-            j_i(k-1) = r_half_k(k-1)*(-(D_e*n_i_i(k) - D_e*n_i_i(k-1))/h_k(k-1) + &
+            j_i(k-1) = r_half_k(k-1)*(-D_i*(n_i_i(k) - n_i_i(k-1))/h_k(k-1) + &
             (eps_i(k-1)*n_i_i(k) + (1 - eps_i(k-1))*n_i_i(k-1))*k_i*E_r_i(k-1))
-        end do
+        end do 
 
         !j_e(M) = -D_e * (n_e(M) - n_e(M-1)) / h_k(M-1) - k_e * n_e(M) * E_r(M)
         !j_i(M) = -D_i * (n_i(M) - n_i(M-1)) / h_k(M-1) + k_i * n_i(M) * E_r(M)

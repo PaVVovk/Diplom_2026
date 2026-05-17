@@ -4,7 +4,7 @@ subroutine solve_ion_continuity(tau,n_i_m1,n_e_im,E_r_im)
     use functions
     implicit none
     real(dp), intent(in) :: tau
-    real(dp), intent(in) :: n_e_im(0:M), E_r_im(0:M)
+    real(dp), intent(in) :: n_e_im(0:M), E_r_im(0:M-1)
     real(dp), intent(out) :: n_i_m1(0:M)
 
     integer :: k
@@ -24,8 +24,8 @@ subroutine solve_ion_continuity(tau,n_i_m1,n_e_im,E_r_im)
     do k = 1, M-1
         a_k = a_km(k); b_k = b_km(k); u_k = u_km(k); w_k = w_km(k)
         A(k) = a_k*(D_i/h_k(k-1) + (1-eps_i(k-1))*k_i*E_r_im(k-1))
-        B(k) = b_k*(D_i/h_k(k)) !- k_i*E_r_im(k+1)/2)
-        C(k) = sitau + beta_ei*n_e_im(k) + w_k*D_i + b_k*(1-eps_i(k))*k_i*E_r_im(k) !u_k*k_i*E_r_im(k)
+        B(k) = b_k*(D_i/h_k(k) - eps_i(k)*k_i*E_r_im(k))!- k_i*E_r_im(k+1)/2)
+        C(k) = sitau + beta_ei*n_e_im(k) + w_k*D_i + k_i*(b_k*(1-eps_i(k))*E_r_im(k) - a_k*eps_i(k-1)*E_r_im(k-1)) !u_k*k_i*E_r_im(k)
         F(k) = n_i_i(k)/tau + nu_ion*n_e_im(k) + &
                sigm1*(A(k)*n_i_i(k-1) - &
                (C(k) - sitau)*n_i_i(k) + B(k)*n_i_i(k+1))
