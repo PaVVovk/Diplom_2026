@@ -1,22 +1,3 @@
-module variables
-    integer, parameter :: dp = kind(1.0d0)
-    integer :: M,k_maxit,iter
-    real(dp) :: sigma, sigm1, const,tol,T_e
-    real(dp), allocatable :: r_k(:), r_half_k(:), h_k(:), h_half_k(:)
-    real(dp) :: l_e,l_i,D_e,D_i,k_e,k_i,nu_ion,p,N,beta_ei,N_L
-    real(dp), parameter :: k_b = 1.380649E-23_dp
-    real(dp), parameter :: e = 1.602176634E-19_dp, epsilon0 = 8.85E-12_dp
-    real(dp), parameter :: gamma_e = 0.7104_dp
-    real(dp), parameter :: gamma_i = 0.7104_dp
-    real(dp), parameter :: T_gas = 300.0_dp
-    real(dp), allocatable :: n_e_i(:), n_i_i(:), E_r_i(:)
-    real(dp), allocatable :: n_e_final(:), n_i_final(:), E_r_final(:)
-    real(dp), allocatable :: a_km(:),b_km(:),u_km(:),w_km(:)
-    character ch    !fav
-    character*6 ch_nt0
-
-end module variables
-!----------------------------------------------------------------
 program concentration
     use variables
     use bolsig_data
@@ -36,9 +17,7 @@ program concentration
     ch_nt0 = '_Data\'
     k_maxit = 3; iter = 8; tol = 1.0E-6_dp
     beta_ei = 1.0d-9*1.0d-6  !fav 1 cm^3/s -> m^3/s
-     !fav tabulation
-!    const = 2.0_dp*3.141592653589793_dp*1.602176634E-19_dp  !from 4\pi e
-    const = 1.602176634E-19_dp/(2.0_dp*epsilon0)  !from 4\pi e = e/\epsilon_0
+    !fav tabulation
     !EN = 100.0_dp !fav E/N in Td = 1.0e-17 V cm^2 = 1.0e-21 V m^2
     !EN = 40.37_dp; T_e = 6.087_dp*2.0_dp/3.0_dp
     !k_e = 9.006E+23_dp; D_e = 7.419E+24_dp
@@ -53,9 +32,6 @@ program concentration
     delta = -0.02_dp     !fav
     print *, 'Enter the DELTA thickening parameter. Now delta = ',delta     !fav
     read *, delta
-    !print *, 'Enter a numeric parameter sigma'
-    !read *, sigma
-    sigma = 0.5_dp
     p = 100.0_dp     !fav
     print *, 'Enter the pressure in pascals. Now p = ',p     !fav
     read *, p

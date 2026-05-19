@@ -1,6 +1,6 @@
     !Прогонка для электронов
 
-    subroutine solve_electron_continuity(tau,n_e_m1,n_i_im,E_r_im)
+ subroutine solve_electron_continuity(tau,n_e_m1,n_i_im,E_r_im)
     use variables
     use functions 
     implicit none
