@@ -1,6 +1,6 @@
     !Прогонка для электронов
 
- subroutine solve_electron_continuity(tau,n_e_m1,n_i_im,E_r_im)
+    subroutine solve_electron_continuity(tau,n_e_m1,n_i_im,E_r_im)
     use variables
     use functions 
     implicit none
@@ -13,26 +13,25 @@
     real(dp) :: alpha(1:M), beta(1:M)
     real(dp) :: y(0:M), eps_e(0:M-1)
 
-    real(dp) :: a_k, b_k, u_k, w_k, sitau,ttt
+    real(dp) :: a_k, b_k, w_k, sitau, denom, l_e, v_e
 !----------------------------------------------------------------------------------------
     sitau = 1.0_dp/(sigma*tau)
     eps_e = epsilon_e(E_r_im) 
+    
+    v_e = sqrt(3*E_mean/m_e)
+    l_e = 3.0_dp*D_e/v_e
 !
-    B(0) = 4.0_dp*D_e/(h_k(0)**2) + 2.0_dp*k_e*E_r_im(0)/h_k(0)
-    C(0) = sitau - nu_ion + beta_ei * n_i_im(0) + 4.0_dp * D_e / (h_k(0)**2)
+    B(0) = 4.0_dp*D_e/(h_k(0)**2) + 2.0_dp*(1-eps_e(0))*k_e*E_r_im(0)/r_half_k(0)
+    C(0) = sitau - nu_ion + beta_ei * n_i_im(0) + 4.0_dp * D_e / (h_k(0)**2) - 2.0_dp*eps_e(0)*k_e*E_r_im(0)/r_half_k(0)
     F(0) = n_e_i(0)/tau + sigm1 * (B(0)*n_e_i(1) - (C(0) - sitau)*n_e_i(0))
 
     do k = 1, M-1
-        a_k = a_km(k); b_k = b_km(k); u_k = u_km(k); w_k = w_km(k)
+        a_k = a_km(k); b_k = b_km(k); w_k = w_km(k)
         A(k) = a_k * (D_e/h_k(k-1) - k_e*(1 - eps_e(k-1))*E_r_im(k-1))
         B(k) = b_k * (D_e/h_k(k) + k_e*eps_e(k)*E_r_im(k))
         C(k) = sitau - nu_ion + beta_ei * n_i_im(k) + w_k * D_e - &
         b_k * k_e *(1-eps_e(k))*E_r_im(k) + a_k*k_e *eps_e(k-1)*E_r_im(k-1)
         F(k) = n_e_i(k)/tau + sigm1 * (A(k)*n_e_i(k-1) - (C(k) - sitau)*n_e_i(k) + B(k)*n_e_i(k+1))
-        !A(k) = a_k * (D_e/h_k(k-1) - k_e*E_r_im(k-1)/2.0_dp)
-        !B(k) = b_k * (D_e/h_k(k) + k_e*E_r_im(k+1)/2.0_dp)
-        !C(k) = sitau - nu_ion + beta_ei * n_i_im(k) + w_k * D_e - u_k * k_e * E_r_im(k)
-        !F(k) = n_e_i(k)/tau + sigm1 * (A(k)*n_e_i(k-1) - (C(k) - sitau)*n_e_i(k) + B(k)*n_e_i(k+1))
        if (abs(C(k)) > 1.0e30 .or. abs(B(k)) > 1.0e30) then
 		   print *, 'EXPLOSION detected at k =', k
 		   print *, 'C(k)=', C(k), 'B(k)=', B(k), 'F(k)=', F(k)
@@ -43,11 +42,14 @@
     !print *, 'B_K = ', maxval(B)
     !print *, 'C_K = ', maxval(C)
     !print *, 'F_K = ', maxval(F)
-
-    !A(M) = gamma_e*l_e/h_k(M-1)
-    !C(M) = 1.0_dp + gamma_e * l_e / h_k(M-1)
-    A(M) = 0.0_dp
-    C(M) = 1.0_dp
+	
+	if (bc_mode == 1) then
+		A(M) = gamma_e*l_e/h_k(M-1)
+		C(M) = 1.0_dp + gamma_e * l_e / h_k(M-1)
+	else
+		A(M) = 0.0_dp
+		C(M) = 1.0_dp
+    end if
     B(M) = 0.0_dp
     F(M) = 0.0_dp
 
@@ -57,14 +59,13 @@
     alpha(1) = B(0) / C(0)
     beta(1) = F(0) / C(0)
     do k = 1, M-1
-        ttt = C(k) - alpha(k) * A(k)
-        alpha(k+1) = B(k) / ttt
-        beta(k+1) = (beta(k) * A(k) + F(k)) / ttt
+        denom = C(k) - alpha(k) * A(k)
+        alpha(k+1) = B(k) / denom
+        beta(k+1) = (beta(k) * A(k) + F(k)) / denom
     end do
-!        beta(M+1) = (beta(M) * A(M) + F(M)) / (C(M) - alpha(M) * A(M))
-    ttt = (beta(M) * A(M) + F(M)) / (C(M) - alpha(M) * A(M))
+    denom = (beta(M) * A(M) + F(M)) / (C(M) - alpha(M) * A(M))
 ! Обратный ход
-    y(M) = ttt! beta(M+1)
+    y(M) = denom
     n_e_m1(M) = y(M) / sigma
     do k = M-1, 0, -1
         y(k) = alpha(k+1) * y(k+1) + beta(k+1)

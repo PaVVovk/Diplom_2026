@@ -3,6 +3,6 @@
 *.cbp
 *.txt
 *.zip
-Data*/
+_Data/
 
 !bolsigminus.exe

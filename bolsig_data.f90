@@ -1,16 +1,17 @@
 module bolsig_data
+    use variables, only: dp
     implicit none
 
     ! “ип данных дл€ хранени€ результатов
     type :: bolsig_data_t
         integer :: n_points                         ! количество точек данных
-        real, allocatable :: E_over_N(:)            ! E/N (Td)
-        real, allocatable :: mean_energy(:)         ! A1 - средн€€ энерги€ (eV)
-        real, allocatable :: mobility_N(:)          ! A2 - подвижность * N (1/m/V/s)
-        real, allocatable :: diffusion_N(:)         ! A6 - диффузи€ * N (1/m/s)
-        real, allocatable :: energy_mobility_N(:)   ! A11 - энерг. подвижность * N
-        real, allocatable :: energy_diffusion_N(:)  ! A12 - энерг. диффузи€ * N
-        real, allocatable :: ionization_freq_N(:)   ! A16 - частота ионизации * N (m3/s)
+        real(dp), allocatable :: E_over_N(:)            ! E/N (Td)
+        real(dp), allocatable :: mean_energy(:)         ! A1 - средн€€ энерги€ (eV)
+        real(dp), allocatable :: mobility_N(:)          ! A2 - подвижность * N (1/m/V/s)
+        real(dp), allocatable :: diffusion_N(:)         ! A6 - диффузи€ * N (1/m/s)
+        real(dp), allocatable :: energy_mobility_N(:)   ! A11 - энерг. подвижность * N
+        real(dp), allocatable :: energy_diffusion_N(:)  ! A12 - энерг. диффузи€ * N
+        real(dp), allocatable :: ionization_freq_N(:)   ! A16 - частота ионизации * N (m3/s)
         character(len=256) :: source_file           ! исходный файл данных
     end type bolsig_data_t
 
